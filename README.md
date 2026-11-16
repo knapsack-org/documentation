@@ -7,7 +7,7 @@ Documentation of the **knapsack benchmark**: five 0-1 knapsack algorithms run on
 | [`knapsack-benchmark-python`](https://github.com/knapsack-org/knapsack-benchmark-python) | Python ≥ 3.10, NumPy, SciPy | [implementation/python](implementation/python/README.md) |
 | [`knapsack-benchmark-matlab`](https://github.com/knapsack-org/knapsack-benchmark-matlab) | GNU Octave ≥ 7 / MATLAB ≥ R2021a | [implementation/matlab](implementation/matlab/README.md) |
 
-The results viewer Knapview (repository `knapview`, not published yet) reads the JSON both write ([output format](functional/output-format.md)).
+The results viewer [`knapview`](https://github.com/knapsack-org/knapview) reads the JSON both write ([output format](functional/output-format.md)).
 
 ## How this documentation is split
 

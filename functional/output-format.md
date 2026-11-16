@@ -1,6 +1,6 @@
 # Output format (JSON, `schema_version` 2)
 
-One run writes one UTF-8 JSON file named `run-dd-mm-yy-hh-mm.json` (day-month-year-hour-minute of the end of the run). This is the contract between the two benchmark implementations and the Knapview viewer (repository `knapview`).
+One run writes one UTF-8 JSON file named `run-dd-mm-yy-hh-mm.json` (day-month-year-hour-minute of the end of the run). This is the contract between the two benchmark implementations and the [Knapview](https://github.com/knapsack-org/knapview) viewer.
 
 ## Versioning
 

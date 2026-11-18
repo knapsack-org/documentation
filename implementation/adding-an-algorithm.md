@@ -1,8 +1,8 @@
 # Adding an algorithm
 
-Every algorithm is a self-contained folder with the same three parts in both implementations: the **algorithm** itself, its **settings** (one config function) and a **benchmark adapter** that turns its output into the common result struct. The runner finds the config and adapter by name, so a new algorithm touches no runner code.
+Every algorithm is a **self-contained folder**. The benchmark finds it by scanning the algorithms folder, so adding, removing or changing an algorithm touches **only its folder** (plus its functional page in this repository). No runner, registry, helper, test or viewer file is edited.
 
-Use `<id>` for the new id (lower case, `[a-z0-9_]`, e.g. `greedy`).
+Use `<id>` for the new id: lower case, matching `[a-z][a-z0-9_]*` (e.g. `greedy`). The folder name is the id.
 
 ## Checklist
 
@@ -10,100 +10,266 @@ Use `<id>` for the new id (lower case, `[a-z0-9_]`, e.g. `greedy`).
 |---|---|---|---|
 | 1 | Functional page | `documentation/functional/algorithms/<id>.md` from [the template](../functional/algorithms/_template.md); add its settings to [parameters](../functional/parameters.md) and its `details` to [output format](../functional/output-format.md#details-by-algorithm) | same page (one spec for both) |
 | 2 | Folder | `src/algorithms/<id>/` | `src/knapsack_benchmark/algorithms/<id>/` with an empty `__init__.py` |
-| 3 | Algorithm | `kb_<name>.m` (one or more files) | `<id>.py` |
-| 4 | Settings | `kb_config_<id>.m` → struct, must contain `repeats` | `config_<id>.py`: `config_<id>() -> dict`, must contain `repeats` |
-| 5 | Adapter | `kb_algo_<id>.m`: `out = kb_algo_<id>(v, w, C, acfg, seed)` | `algo_<id>.py`: `algo_<id>(v, w, C, acfg, seed) -> dict` |
-| 6 | Register | add `'<id>'` to `L.ids` in `src/algorithms/algorithm_loader.m` | add `"<id>"` to `ALGORITHMS` in `algorithms/algorithm_loader.py` |
-| 7 | Test | `tests/test_p01.m`: P01 optimum 309 (exact) or a feasible value (heuristic) | `tests/test_p01.py`, same check |
-| 8 | Docs | [traceability matrix](README.md#traceability-matrix), [MATLAB reference](matlab/api.md), project README | [Python reference](python/api.md), project README |
+| 3 | Loader | `kp_algo_<id>_loader.m` | `kp_algo_<id>_loader.py` |
+| 4 | Maths | `kp_algo_<id>_main.m` | `kp_algo_<id>_main.py` |
+| 5 | Settings | `kp_algo_<id>_config.m` | `kp_algo_<id>_config.py` |
+| 6 | Output | `kp_algo_<id>_output.m` | `kp_algo_<id>_output.py` |
+| 7 | Helpers (optional) | `modules/*.m` | `modules/*.py` with `__init__.py` |
+| 8 | Check | `octave-cli --eval "addpath('tests'); test_p01"`, then a full run | `pytest`, then a full run |
 
-Then check parity: run both projects on the same instances and compare the values (see [acceptance tests](../functional/acceptance-tests.md)).
+The P01 test runs **every** discovered algorithm through its adapter (exact: value 309; heuristic: feasible) and validates its two JSON blocks against its schema, so a new algorithm needs no test edit. Algorithm-specific unit tests may still be added to `tests/`. Then check parity: both projects must give the same values (see [acceptance tests](../functional/acceptance-tests.md)).
 
-Registering an id changes the default `algorithms` list and adds a `parameters.<id>` block to every run: older files simply lack it, so this is **not** a breaking change of the output (no `schema_version` bump). Knapview shows an unknown id with a neutral colour and the generic widgets.
+Adding an algorithm adds an `algorithms[]` entry, a `parameters.<id>` block and a `results.<id>` per instance: this is **not** a breaking change of the output (no `schema_version` bump). Knapview names it with its `short_label` and shows it with a neutral colour and the generic widgets.
 
-## Adapter contract
+## Folder rules
 
-Inputs: `v`, `w` (values and weights, 1 × n), `C` (capacity), `acfg` = the algorithm's settings block `cfg.<id>` after overrides, `seed` = `cfg.seed + 1000 * k` for instance `k` (use it, plus an own offset if needed, for any randomness; ignore it otherwise).
+- The four `kp_algo_<id>_*` files are required; discovery stops with an error when one is missing or when the loader's `id` differs from the folder name.
+- Algorithm code may call the generic helpers (`kb_bytes`, `kb_lcg`, `kb_randi`, `kb_seed` in MATLAB; `helpers.rng`, `helpers.phase_timer` in Python) but **never another algorithm's folder**. Code shared with another algorithm is copied into this folder's `modules/` (e.g. `qubo/modules/kb_penalty.m` and `qubo_chz/modules/kb_chz_penalty.m`).
+- MATLAB only: every `.m` file name under `src/algorithms/` must be unique across folders, because all folders share one path (`genpath`) and a duplicate would silently shadow the other. Discovery stops with `kb_discover_algorithms:duplicateName`. Prefix module files with the id when in doubt (`kb_chz_*`).
+- Only the four contract files use the `kp_` prefix; module files keep `kb_` (MATLAB) or any module name (Python).
 
-Output — exactly these fields:
+## Loader contract — `kp_algo_<id>_loader`
+
+Returns a struct (MATLAB) / dict (Python), read by discovery:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | the folder name |
+| `label` | string | human-readable name, main words capitalised (`Branch and Bound (Dantzig Bound, Depth-First)`); written to `algorithms[].label` and `results.<id>.algorithm` (the output may add a variant, e.g. the tabu mode) |
+| `description` | string | one or two sentences on the method, written to `algorithms[].description` |
+| `short_label` | string | short name for chips and legends (`BnB`) |
+| `exact` | bool | the method can prove optimality |
+| `reference` | bool | `true` only for `dp`: its value is the optimum the others are compared with. Exactly one available exact algorithm must be the reference |
+| `available` | function → bool | `false` when the algorithm cannot run here (e.g. `ilp` without a solver): it is skipped with a warning and listed in `skipped_algorithms` |
+| `environment` | function → struct/dict | facts written to `environment.algorithms.<id>` (e.g. `{solver}` for `ilp`); empty when there is nothing to add |
+
+## Main contract — `kp_algo_<id>_main`
+
+The maths only, no benchmark wrapping:
+
+`[items, info] = kp_algo_<id>_main(v, w, C, acfg, seed, mark)` (Python: `kp_algo_<id>_main(v, w, C, acfg=None, seed=None, mark=None) -> (items, info)`).
+
+| Input | Meaning |
+|---|---|
+| `v`, `w`, `C` | values and weights (1 × n), capacity |
+| `acfg` | the settings block `cfg.<id>` |
+| `seed` | `cfg.seed + 1000 * k` for instance `k`; use it (plus an own offset if needed) for any randomness, ignore it otherwise |
+| `mark` | optional phase hook: call `mark('build')`, `mark('solve')`, … at the end of each phase you want timed; the adapter turns the marks into `details.<phase>_time_s`. Default: none |
+
+`items` are the selected items, **1-based**, sorted. `info` holds what the output needs: the value, counters only the algorithm can see (nodes, move evaluations, its own array bytes) and any by-product (energy, raw solution).
+
+MATLAB: accept unused trailing arguments with `varargin`, not `~`: Octave then counts an extra `ans` variable in `whos`, which changes `working_memory_bytes`. Pass `_main` only the arguments it uses.
+
+## Settings contract — `kp_algo_<id>_config`
+
+Returns the default block `cfg.<id>` (struct / dict), which **must contain `repeats`**. It is the only place a setting of this algorithm is changed; there are no run-time overrides.
+
+## Output contract — `kp_algo_<id>_output`
+
+MATLAB: `O = kp_algo_<id>_output()` returns a struct with three fields; Python: a module with `run`, `entry` and `SCHEMA`.
+
+| Part | Meaning |
+|---|---|
+| `run(v, w, C, acfg, seed)` | the benchmark adapter: calls `_main` (with a `kb_phase_timer` / `phase_timer` as `mark` if it has phases), returns the common result below |
+| `entry(acfg, env)` | the algorithm's `algorithms[]` entry: `{id, label, description, short_label, exact, reference, config}` (`env` = the loader's environment, e.g. for a solver name in the label) |
+| `schema.entry`, `schema.details` (Python `SCHEMA["entry"]`, `SCHEMA["details"]`) | JSON Schema of the entry and of `results.<id>.details`. Subset understood by the validators: `type` (also a list), `enum`, `minimum`, `properties`, `required`, `additionalProperties: false`, `items`. Every run checks every entry and every `details` block against them |
+
+Common result returned by `run` — exactly these fields:
 
 | Field | Meaning |
 |---|---|
-| `label` | human-readable name, written as `algorithms[].label` and `results.<id>.algorithm` |
+| `label` | written as `results.<id>.algorithm` |
 | `exact` | `true` if the method can prove optimality |
 | `proven_optimal` | `true` if optimality was proven for this instance |
 | `items` | selected items, **1-based**, sorted |
-| `working_memory_bytes` (MATLAB) / `array_bytes` (Python) | bytes of the algorithm's own arrays |
+| `working_memory_bytes` | bytes of the algorithm's own arrays |
 | `operations`, `operations_unit` | main work counter and its unit (`null` if not available) |
-| `details` | algorithm-specific values (struct / dict), documented in the functional page |
+| `details` | algorithm-specific values, documented in the functional page and described by `schema.details` |
 
-The runner (`kb_run_algorithm` / `run_algorithm`) times the adapter `acfg.repeats` times and derives value, weight, feasibility, gap and cost from `items`.
+The runner (`kb_run_algorithm` / `run_algorithm`) times `run` `acfg.repeats` times and derives value, weight, feasibility, gap and cost from `items`.
 
 ## MATLAB / Octave skeleton
 
-`src/algorithms/<id>/kb_config_<id>.m`
+`src/algorithms/<id>/kp_algo_<id>_loader.m`
 
 ```matlab
-function c = kb_config_<id>()
-%KB_CONFIG_<ID>  Default settings of '<id>' (block cfg.<id> of BENCHMARK_CONFIG).
+function L = kp_algo_<id>_loader()
+%KP_ALGO_<ID>_LOADER  Identity of '<id>' for KB_DISCOVER_ALGORITHMS.
+  L = struct();
+  L.id = '<id>';                        % must equal the folder name
+  L.label = '<Full Name>';
+  L.description = '<One or two sentences on the method.>';
+  L.short_label = '<SHORT>';            % algorithm chip in Knapview
+  L.exact = false;
+  L.reference = false;
+  L.available = @() true;
+  L.environment = @() struct();         % nothing to add to environment.algorithms
+end
+```
+
+`src/algorithms/<id>/kp_algo_<id>_main.m`
+
+```matlab
+function [items, info] = kp_algo_<id>_main(v, w, C, acfg, varargin)
+%KP_ALGO_<ID>_MAIN  <What it computes>.
+  limit = acfg.my_limit;
+  % ... the method ...
+  items = find(take);
+  info = struct('value', sum(v(items)), 'steps', steps);
+  vars = whos();
+  info.working_memory_bytes = sum([vars.bytes]);
+end
+```
+
+`src/algorithms/<id>/kp_algo_<id>_config.m`
+
+```matlab
+function c = kp_algo_<id>_config()
+%KP_ALGO_<ID>_CONFIG  Settings of '<id>' (block cfg.<id> of BENCHMARK_CONFIG).
   c = struct();
   c.my_limit = 1000;            % <meaning>
   c.repeats = 3;                % timed runs per instance
 end
 ```
 
-`src/algorithms/<id>/kb_algo_<id>.m`
+`src/algorithms/<id>/kp_algo_<id>_output.m`
 
 ```matlab
-function out = kb_algo_<id>(v, w, C, acfg, seed) %#ok<INUSD>
-%KB_ALGO_<ID>  Benchmark adapter of '<id>': run KB_<NAME>, return the common result struct.
-%   OUT = KB_ALGO_<ID>(V, W, C, ACFG, SEED): ACFG = cfg.<id>, SEED = cfg.seed + 1000 * k.
-  [~, items, info] = kb_<name>(v, w, C, acfg.my_limit);
-  out = struct('label', '<full name>', 'exact', false, 'proven_optimal', false, ...
-               'items', items, 'working_memory_bytes', kb_bytes(v, w), ...
+function O = kp_algo_<id>_output()
+%KP_ALGO_<ID>_OUTPUT  Benchmark adapter and JSON description of '<id>'.
+  O = struct('run', @run_algo, 'entry', @build_entry, 'schema', describe());
+end
+
+function out = run_algo(v, w, C, acfg, seed) %#ok<INUSD>
+  [items, info] = kp_algo_<id>_main(v, w, C, acfg);
+  L = kp_algo_<id>_loader();
+  out = struct('label', L.label, 'exact', false, 'proven_optimal', false, 'items', items, ...
+               'working_memory_bytes', info.working_memory_bytes, ...
                'operations', info.steps, 'operations_unit', '<unit>');
   out.details = struct('steps', info.steps);
 end
+
+function e = build_entry(acfg, env) %#ok<INUSD>
+  L = kp_algo_<id>_loader();
+  e = struct('id', L.id, 'label', L.label, 'description', L.description, ...
+             'short_label', L.short_label, 'exact', L.exact, 'reference', L.reference, ...
+             'config', acfg);
+end
+
+function s = describe()
+  s.entry = jsondecode(['{"type": "object", "additionalProperties": false,' ...
+    ' "required": ["id", "label", "description", "short_label", "exact", "reference", "config"],' ...
+    ' "properties": {"id": {"enum": ["<id>"]}, "label": {"type": "string"},' ...
+    ' "description": {"type": "string"}, "short_label": {"type": "string"},' ...
+    ' "exact": {"type": "boolean"}, "reference": {"type": "boolean"},' ...
+    ' "config": {"type": "object", "additionalProperties": false,' ...
+    '   "required": ["my_limit", "repeats"],' ...
+    '   "properties": {"my_limit": {"type": "integer", "minimum": 1},' ...
+    '                  "repeats": {"type": "integer", "minimum": 1}}}}}']);
+  s.details = jsondecode(['{"type": "object", "additionalProperties": false,' ...
+    ' "required": ["steps"], "properties": {"steps": {"type": "integer", "minimum": 0}}}']);
+end
 ```
+
+MATLAB arrays in `details` must be cells (`num2cell`) so that a one-element list is still written as a JSON array; the validator checks `"type": "array"` against cells.
 
 ## Python skeleton
 
-`src/knapsack_benchmark/algorithms/<id>/config_<id>.py`
+`src/knapsack_benchmark/algorithms/<id>/kp_algo_<id>_loader.py`
 
 ```python
-"""Default settings of '<id>' (block cfg["<id>"]; port of kb_config_<id>.m)."""
+"""Identity of '<id>' for discover_algorithms (port of kp_algo_<id>_loader.m)."""
+from __future__ import annotations
 
 
-def config_<id>() -> dict:
+def kp_algo_<id>_loader() -> dict:
+    return {
+        "id": "<id>",                  # must equal the folder name
+        "label": "<Full Name>",
+        "description": "<One or two sentences on the method.>",
+        "short_label": "<SHORT>",      # algorithm chip in Knapview
+        "exact": False,
+        "reference": False,
+        "available": lambda: True,
+        "environment": lambda: {},
+    }
+```
+
+`src/knapsack_benchmark/algorithms/<id>/kp_algo_<id>_main.py`
+
+```python
+"""<What it computes> (port of kp_algo_<id>_main.m)."""
+from __future__ import annotations
+
+
+def kp_algo_<id>_main(v, w, C, acfg=None, seed=None, mark=None) -> tuple[list[int], dict]:
+    limit = acfg["my_limit"]
+    # ... the method ...
+    return items, {"value": value, "steps": steps, "working_memory_bytes": array_bytes}
+```
+
+`src/knapsack_benchmark/algorithms/<id>/kp_algo_<id>_config.py`
+
+```python
+"""Settings of '<id>' (block cfg["<id>"]; port of kp_algo_<id>_config.m)."""
+
+
+def kp_algo_<id>_config() -> dict:
     return {
         "my_limit": 1000,          # <meaning>
         "repeats": 3,              # timed runs per instance
     }
 ```
 
-`src/knapsack_benchmark/algorithms/<id>/algo_<id>.py`
+`src/knapsack_benchmark/algorithms/<id>/kp_algo_<id>_output.py`
 
 ```python
-"""Benchmark adapter of '<id>' (port of kb_algo_<id>.m)."""
+"""Benchmark adapter and JSON description of '<id>' (port of kp_algo_<id>_output.m)."""
 from __future__ import annotations
 
-from .<id> import <name>
+from .kp_algo_<id>_loader import kp_algo_<id>_loader
+from .kp_algo_<id>_main import kp_algo_<id>_main
 
 
-def algo_<id>(v, w, C, acfg, seed):
-    """algo_<id>(v, w, C, acfg, seed): acfg = cfg["<id>"], seed = cfg["seed"] + 1000 * k."""
-    _, items, info = <name>(v, w, C, acfg["my_limit"])
-    return {"label": "<full name>", "exact": False, "proven_optimal": False,
-            "items": items, "array_bytes": int(v.nbytes + w.nbytes),
+def run(v, w, C, acfg, seed):
+    items, info = kp_algo_<id>_main(v, w, C, acfg, seed)
+    return {"label": kp_algo_<id>_loader()["label"], "exact": False, "proven_optimal": False,
+            "items": items, "working_memory_bytes": info["working_memory_bytes"],
             "operations": info["steps"], "operations_unit": "<unit>",
             "details": {"steps": info["steps"]}}
+
+
+def entry(acfg, env):
+    L = kp_algo_<id>_loader()
+    return {"id": L["id"], "label": L["label"], "description": L["description"],
+            "short_label": L["short_label"], "exact": L["exact"], "reference": L["reference"],
+            "config": acfg}
+
+
+SCHEMA = {
+    "entry": {
+        "type": "object", "additionalProperties": False,
+        "required": ["id", "label", "description", "short_label", "exact", "reference", "config"],
+        "properties": {
+            "id": {"enum": ["<id>"]}, "label": {"type": "string"},
+            "description": {"type": "string"}, "short_label": {"type": "string"},
+            "exact": {"type": "boolean"}, "reference": {"type": "boolean"},
+            "config": {"type": "object", "additionalProperties": False,
+                       "required": ["my_limit", "repeats"],
+                       "properties": {"my_limit": {"type": "integer", "minimum": 1},
+                                      "repeats": {"type": "integer", "minimum": 1}}},
+        },
+    },
+    "details": {"type": "object", "additionalProperties": False, "required": ["steps"],
+                "properties": {"steps": {"type": "integer", "minimum": 0}}},
+}
 ```
 
 ## Existing examples
 
 | Kind | Look at |
 |---|---|
-| exact, no settings but `repeats` | `dp` |
+| exact, no settings but `repeats`, reference | `dp` |
 | exact with a limit | `bnb` (`max_nodes`) |
-| external solver | `ilp` |
-| randomised, nested settings, uses `seed` | `qubo`; `qubo_chz` adds `seed_offset` |
+| external solver, `available()` and `environment()`, solver name in the label | `ilp` |
+| randomised, nested settings, uses `seed`, timed phases with `mark`, `modules/` | `qubo`; `qubo_chz` adds `seed_offset` and copies the modules |

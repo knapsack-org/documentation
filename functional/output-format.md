@@ -1,13 +1,15 @@
-# Output format (JSON, `schema_version` 2)
+# Output format (JSON, `schema_version` 3)
 
 One run writes one UTF-8 JSON file named `run-dd-mm-yy-hh-mm.json` (day-month-year-hour-minute of the end of the run). This is the contract between the two benchmark implementations and the [Knapview](https://github.com/knapsack-org/knapview) viewer.
 
 ## Versioning
 
-- `schema_version` (integer) identifies the structure; current value **2**, identical in both implementations.
+- `schema_version` (integer) identifies the structure; current value **3**, identical in both implementations.
 - It must be increased in **both** implementations on any breaking change (renamed/removed field, changed type or meaning). Adding an optional field is not breaking.
-- Readers reject a version they do not support. Knapview reads only version 2 (a version 1 file must be re-run).
-- History: **1** (2026-11-14) first version. **2** (2026-11-16) `algorithms` is a list of objects with each algorithm's settings; per-algorithm parameter blocks; `instance_config` and the `instances` parameter block ([renamed keys](parameters.md#keys-renamed-in-schema_version-2)).
+- Readers reject a version they do not support. Knapview reads only version 3 (older files must be re-run).
+- History: **1** (2026-11-14) first version. **2** (2026-11-16) `algorithms` is a list of objects with each algorithm's settings; per-algorithm parameter blocks; `instance_config` and the `instances` parameter block ([renamed keys](parameters.md#keys-renamed-in-schema_version-2)). **3** (2026-11-18) algorithms found by scanning their folders and listed in alphabetical order; `algorithms[]` gains `description`, `short_label` and `reference`, labels are capitalised; new `skipped_algorithms`; `environment.ilp_solver` → `environment.algorithms.ilp.solver`; ratios renamed `*_vs_dp` → `*_vs_reference`; generated `description`.
+
+Each algorithm describes its own two blocks (its `algorithms[]` entry and its `results.<id>.details`) with a JSON Schema, and the implementations check every run against it before writing the file ([adding an algorithm](../implementation/adding-an-algorithm.md#output-contract--kp_algo_id_output)).
 
 ## Encoding rules
 
@@ -21,11 +23,12 @@ One run writes one UTF-8 JSON file named `run-dd-mm-yy-hh-mm.json` (day-month-ye
 | Field | Type | Meaning |
 |---|---|---|
 | `project` | string | `knapsack-benchmark-matlab` or `knapsack-benchmark-python` |
-| `schema_version` | int | `2` |
-| `algorithms` | object[] | algorithms actually run, in run order: [below](#algorithms) (version 1: string[] of ids) |
+| `schema_version` | int | `3` |
+| `algorithms` | object[] | algorithms actually run, in alphabetical order of their ids: [below](#algorithms) (version 1: string[] of ids) |
+| `skipped_algorithms` | object[] | `{id, reason}` of each algorithm that could not run in this environment (e.g. `ilp` without a solver); `[]` when all ran |
 | `instance_config` | object | settings of the instance generator: [below](#instance_config) (not in version 1) |
-| `reference_algorithm` | string | `"dp"` |
-| `description` | string | human-readable summary |
+| `reference_algorithm` | string | id of the reference algorithm, whose value is the optimum $V^*$ (`"dp"`) |
+| `description` | string | human-readable summary, built from the labels and the reference id |
 | `created` | string | local date-time `YYYY-MM-DDTHH:MM:SS` |
 | `environment` | object | [below](#environment) |
 | `parameters` | object | the full resolved [parameters](parameters.md) |
@@ -34,13 +37,16 @@ One run writes one UTF-8 JSON file named `run-dd-mm-yy-hh-mm.json` (day-month-ye
 
 ### `algorithms`
 
-One object per algorithm run, in run order:
+One object per algorithm run, in alphabetical order of the ids:
 
 | Field | Type | Meaning |
 |---|---|---|
 | `id` | string | algorithm id, key of `summary.algorithms` and `instances[].results` |
-| `label` | string | human-readable name (same as `results.<id>.algorithm`) |
+| `label` | string | human-readable name, main words capitalised (same as `results.<id>.algorithm`), e.g. `Branch and Bound (Dantzig Bound, Depth-First)` |
+| `description` | string | one or two sentences on the method |
+| `short_label` | string | short name for compact displays, e.g. `BnB` |
 | `exact` | bool | the method can prove optimality |
+| `reference` | bool | `true` for the reference algorithm only |
 | `config` | object | the resolved settings block of the algorithm (same as `parameters.<id>`, see [parameters](parameters.md#algorithm-settings)) |
 
 ### `instance_config`
@@ -59,8 +65,8 @@ The inputs of the [instance generator](instances.md#generation-procedure), so th
 | `interpreter` | string | `GNU Octave`, `MATLAB` or `Python` |
 | `version` | string | interpreter version |
 | `computer` | string | platform string |
-| `ilp_solver` | string | ILP engine used, `""` if `ilp` was not run |
 | `process_memory_available` | bool | whether process memory could be read |
+| `algorithms.<id>` | object | facts an algorithm adds about the environment, e.g. `algorithms.ilp.solver` (`glpk`, `intlinprog`, `scipy.optimize.milp (HiGHS)`); only algorithms with something to add; absent when none has |
 | *implementation-specific* | | extra keys allowed (e.g. library versions) |
 
 ### `summary`
@@ -81,8 +87,8 @@ The inputs of the [instance generator](instances.md#generation-procedure), so th
 | `n` | int | number of items |
 | `capacity` | int | $C$ |
 | `weights`, `values` | int[] | $w$, $v$ |
-| `optimum` | number | $V^*$ from `dp` |
-| `optimal_items` | int[] | items of the `dp` optimal packing |
+| `optimum` | number | $V^*$: value found by the reference algorithm |
+| `optimal_items` | int[] | items of the reference algorithm's packing |
 | `results.<id>` | object | one per algorithm, [below](#instancesresultsid) |
 
 ### `instances[].results.<id>`
@@ -96,7 +102,7 @@ The inputs of the [instance generator](instances.md#generation-procedure), so th
 | `items` | int[] | returned packing |
 | `gap_percent` | number | |
 | `cost` | object | `repeats`, `wall_time_s`, `wall_time_min_s`, `cpu_time_s`, `working_memory_bytes`, `process_memory_before_bytes`, `process_memory_after_bytes`, `process_memory_delta_bytes`, `operations`, `operations_unit` ([metrics § Cost](metrics.md#execution-cost)); implementations may add optional keys |
-| `cost_ratio_vs_dp` | object | `time`, `cpu`, `memory` |
+| `cost_ratio_vs_reference` | object | `time`, `cpu`, `memory` ([metrics](metrics.md#ratios-to-the-reference)) |
 | `details` | object | algorithm-specific, below |
 
 ### `details` by algorithm
@@ -118,34 +124,39 @@ The inputs of the [instance generator](instances.md#generation-procedure), so th
 ```json
 {
   "project": "knapsack-benchmark-python",
-  "schema_version": 2,
+  "schema_version": 3,
   "algorithms": [
-    { "id": "dp", "label": "dynamic programming 0-1", "exact": true, "config": { "repeats": 5 } },
-    { "id": "bnb", "label": "branch and bound (Dantzig bound, depth-first)", "exact": true,
-      "config": { "max_nodes": 5000000, "repeats": 1 } },
+    { "id": "bnb", "label": "Branch and Bound (Dantzig Bound, Depth-First)",
+      "description": "Exact depth-first search over take/skip decisions, ...", "short_label": "BnB",
+      "exact": true, "reference": false, "config": { "max_nodes": 5000000, "repeats": 1 } },
+    { "id": "dp", "label": "Dynamic Programming 0-1",
+      "description": "Exact table of the best value for the first i items ...", "short_label": "DP",
+      "exact": true, "reference": true, "config": { "repeats": 5 } },
     "..."
   ],
+  "skipped_algorithms": [],
   "instance_config": { "seed": 2026, "count": 100, "min_items": 10, "max_items": 48,
                        "max_coefficient": 100, "capacity_ratio": 0.5 },
   "reference_algorithm": "dp",
-  "created": "2026-11-14T15:08:00",
-  "environment": { "interpreter": "Python", "version": "3.12.0", "computer": "...",
-                   "process_memory_available": true, "ilp_solver": "scipy.optimize.milp (HiGHS)" },
+  "created": "2026-11-18T19:32:00",
+  "environment": { "interpreter": "Python", "version": "3.14.5", "computer": "...",
+                   "process_memory_available": true,
+                   "algorithms": { "ilp": { "solver": "scipy.optimize.milp (HiGHS)" } } },
   "parameters": { "seed": 2026, "instances": { "count": 100, "...": "..." }, "dp": { "repeats": 5 }, "...": "..." },
-  "summary": { "num_instances": 100, "total_time_seconds": 57.3,
+  "summary": { "num_instances": 100, "total_time_seconds": 68.0,
                "ranking_by_median_time": ["...", "..."],
                "algorithms": { "qubo": { "num_optimal": 44, "mean_gap_percent": 1.02, "...": "..." } } },
   "instances": [
     { "id": 1, "family": "uncorrelated", "n": 10, "capacity": 285,
       "weights": ["..."], "values": ["..."], "optimum": 345, "optimal_items": ["..."],
       "results": {
-        "dp": { "algorithm": "dynamic programming 0-1", "exact": true, "proven_optimal": true,
+        "dp": { "algorithm": "Dynamic Programming 0-1", "exact": true, "proven_optimal": true,
                 "value": 345, "items": ["..."], "weight": "...", "feasible": true, "is_optimal": true,
                 "gap_percent": 0,
                 "cost": { "repeats": 5, "wall_time_s": 0.0002, "...": "...",
                           "operations": 2860, "operations_unit": "table cells" },
                 "details": { "table_cells": 2860 },
-                "cost_ratio_vs_dp": { "time": 1, "cpu": 1, "memory": 1 } }
+                "cost_ratio_vs_reference": { "time": 1, "cpu": 1, "memory": 1 } }
       } }
   ]
 }

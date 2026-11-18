@@ -26,7 +26,7 @@ Rule: a behaviour is specified **once**, in `functional/`. Implementation pages 
 3. Algorithms — [`dp`](functional/algorithms/dp.md) · [`bnb`](functional/algorithms/bnb.md) · [`ilp`](functional/algorithms/ilp.md) · [`qubo`](functional/algorithms/qubo.md) · [`qubo_chz`](functional/algorithms/qubo_chz.md)
 4. [Parameters](functional/parameters.md) — every setting, default and effect
 5. [Quality and cost metrics](functional/metrics.md) — gap, optimality, time, memory, operations, summary statistics
-6. [Output format](functional/output-format.md) — JSON `schema_version` 2
+6. [Output format](functional/output-format.md) — JSON `schema_version` 3
 7. [Acceptance tests](functional/acceptance-tests.md) — P01, the MathWorks QUBO example, expected benchmark results
 
 **Implementation specification**
@@ -40,5 +40,5 @@ Rule: a behaviour is specified **once**, in `functional/`. Implementation pages 
 ## Conventions
 
 - Plain GitHub Markdown; formulas in LaTeX (`$…$`, `$$…$$`), rendered by GitHub and Obsidian.
-- Scope: what is **implemented today** (benchmark projects as of 2026-11-16: per-algorithm settings, JSON `schema_version` 2). Planned work (the `knapsack-python` / `knapsack-matlab` libraries, other variants) is out of scope.
+- Scope: what is **implemented today** (benchmark projects as of 2026-11-18: self-contained algorithm folders found by scanning, no run options, JSON `schema_version` 3). Planned work (the `knapsack-python` / `knapsack-matlab` libraries, other variants) is out of scope.
 - Source of truth for this content: the code of both benchmark projects. Background notes (theory, library surveys, EN/FR) live in the project's Obsidian vault.

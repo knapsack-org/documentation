@@ -2,7 +2,7 @@
 
 Every run is fully defined by these parameters (plus the code version). Both implementations use the **same keys and defaults**; a run writes the complete resolved set to `parameters` in the [output](output-format.md).
 
-Overrides are merged **key by key** into the defaults (nested groups are merged, not replaced). An **unknown key is an error**.
+There are **no run-time overrides**: the benchmark command takes no argument and always runs every algorithm on every instance. To change a value, edit the file that defines it: `seed` in the benchmark configuration, `instances.*` in the instance generator's settings, `<id>.*` in the algorithm's own `kp_algo_<id>_config` (file names per implementation in [MATLAB](../implementation/matlab/README.md#run) and [Python](../implementation/python/README.md#run)).
 
 ## Instances
 
@@ -17,15 +17,17 @@ Overrides are merged **key by key** into the defaults (nested groups are merged,
 
 The `instances` block is the instance generator's settings. A run writes it, with `seed`, as `instance_config` in the [output](output-format.md#instance_config).
 
-## Algorithm selection
+## Algorithms
 
-| Key | Default | Meaning |
+| Key | Value | Meaning |
 |---|---|---|
-| `algorithms` | `["dp", "bnb", "ilp", "qubo", "qubo_chz", "greedy", "sa", "ga", "ising", "fptas"]` | algorithms to run, in this order. Unknown ids are an error. The reference optimum is always computed with `dp`, even if `dp` is not listed |
+| `algorithms` | ids of every algorithm folder, alphabetical | written by the run, not set: every algorithm found in the algorithms folder runs, in alphabetical order of its id. An algorithm whose loader says it cannot run in this environment (e.g. `ilp` without a solver) is skipped with a warning and listed in `skipped_algorithms` of the [output](output-format.md#top-level) |
+
+Exactly one algorithm declares itself the **reference** (`dp`); its value on an instance is the optimum $V^*$ that gaps and ratios use. A run stops with an error when no available exact algorithm, or more than one, is the reference.
 
 ## Algorithm settings
 
-Each algorithm has its own settings block, keyed by its id. Every block has `repeats`. A run writes each resolved block twice: in `parameters.<id>` and in `algorithms[].config` of the [output](output-format.md#algorithms).
+Each algorithm has its own settings block, keyed by its id, defined in the algorithm's own config file (`kp_algo_<id>_config`). Every block has `repeats`. A run writes each resolved block twice: in `parameters.<id>` and in `algorithms[].config` of the [output](output-format.md#algorithms).
 
 ### `dp`
 
@@ -121,9 +123,11 @@ Own copy of the QUBO settings, so `qubo_chz` can be tuned without touching `qubo
 
 | Key | Default | Meaning |
 |---|---|---|
-| `timing.trace_memory` | `false` | Python only: extra untimed run to measure peak allocations ([Python](../implementation/python/README.md#cost-measurement)) |
+| `timing.trace_memory` | `false` | Python only, set in `config.py`: extra untimed run to measure peak allocations ([Python](../implementation/python/README.md#cost-measurement)) |
 
 ## Keys renamed in `schema_version` 2
+
+`schema_version` 3 renamed no parameter; it removed the overrides and the selection of algorithms.
 
 | Version 1 | Version 2 |
 |---|---|

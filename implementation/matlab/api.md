@@ -6,8 +6,8 @@ Signatures and outputs. Behaviour is specified in [functional/](../../functional
 
 | Function | Description |
 |---|---|
-| `result = run_benchmark(opts)` | Full [run](../../functional/README.md#benchmark-run-in-one-paragraph). `opts`: optional override struct. Writes `output/run-dd-mm-yy-hh-mm.json`; returns the written struct plus `output_file` |
-| `cfg = benchmark_config(overrides)` | [Defaults](../../functional/parameters.md), with `overrides` merged recursively. Error `benchmark_config:unknownOption` on an unknown field |
+| `result = run_benchmark()` | Full [run](../../functional/README.md#benchmark-run-in-one-paragraph) of every discovered algorithm on every instance; no argument. Writes `output/run-dd-mm-yy-hh-mm.json`; returns the written struct plus `output_file` |
+| `cfg = benchmark_config()` | The [parameters](../../functional/parameters.md): `seed`, `instances` (from `kb_config_instances`), `algorithms` (every folder id, alphabetical) and one block per id (from `kp_algo_<id>_config`). No argument, no merging |
 
 ## Runner helpers (`src/helpers/`)
 
@@ -15,33 +15,26 @@ Called by `run_benchmark`; each is its own file, so it can be called and tested 
 
 | Function | Description |
 |---|---|
-| `name = kb_ilp_solver_name(algos)` | `'intlinprog'` (MATLAB), `'glpk'`, or `''` if none or `ilp` not in `algos` |
-| `res = kb_run_algorithm(name, v, w, C, cfg, k, optimum)` | runs one algorithm with its timing repeats; builds the [result object](../../functional/output-format.md) (quality + `cost`) |
-| `results = kb_add_ratios_vs_dp(results, algos)` | adds `cost_ratio_vs_dp` ([spec](../../functional/metrics.md#ratios-to-dp)) |
+| `[algos, skipped] = kb_discover_algorithms()` | scans `src/algorithms/`; `algos`: struct array (alphabetical) with `id`, `label`, `short_label`, `exact`, `reference`, `environment` (struct), `output` (the `kp_algo_<id>_output` struct); `skipped`: cell of `{id, reason}`. Errors `kb_discover_algorithms:badId`, `:missingFile`, `:idMismatch`, `:duplicateName`, `:reference` |
+| `res = kb_run_algorithm(algo, v, w, C, cfg, k)` | runs one discovered algorithm with its timing repeats (`algo.output.run`); validates `details`; builds the [result object](../../functional/output-format.md) (quality + `cost`); `is_optimal` / `gap_percent` are filled by `run_benchmark` once the reference value is known |
+| `results = kb_add_ratios(results, ids, ref)` | adds `cost_ratio_vs_reference` ([spec](../../functional/metrics.md#ratios-to-the-reference)) |
+| `kb_validate_schema(x, schema, where)` | errors `kb_validate_schema:invalid` (message starts with `where`) when `x` does not match the JSON Schema subset `schema` (struct from `jsondecode`) |
+| `[mark, times] = kb_phase_timer()` | phase timer for `kp_algo_<id>_main`: each `mark('name')` stores in the `containers.Map` `times('name')` the seconds since the previous mark |
 | `s = kb_summary(runs, algos, total_time)` | [summary statistics](../../functional/metrics.md#summary-statistics) |
-| `p = kb_penalty(values, rule)` | QUBO penalty, see [QUBO](#qubo--spec) |
 | `name = kb_interpreter()` | `'GNU Octave'` or `'MATLAB'` |
 | `kb_print_instance(r, algos)`, `kb_print_summary(s, algos, total_time, out_file)` | console output |
 | `s = kb_human_bytes(b)` | byte count as `B`/`kB`/`MB` text |
 
-## Algorithm loader (`src/algorithms/algorithm_loader.m`)
+## Algorithm folders (`src/algorithms/<id>/`)
 
-`L = algorithm_loader()` groups everything the runner needs to load the algorithms; used by `benchmark_config`, `run_benchmark` and `kb_run_algorithm`.
+Contract and skeletons: [adding an algorithm](../adding-an-algorithm.md). For every `<id>` (`bnb`, `dp`, `ilp`, `qubo`, `qubo_chz`, …):
 
-| Field | Description |
+| Function | Description |
 |---|---|
-| `L.ids` | registry of algorithm ids, default run order (cell) |
-| `c = L.configs()` | struct of the default settings blocks, one field per id (`kb_config_<id>()`) |
-| `algos = L.check(requested)` | validates ids (error `run_benchmark:unknownAlgorithm`); drops `ilp` with warning `run_benchmark:noIlp` when no solver exists |
-| `f = L.adapter(id)` | handle to the adapter `kb_algo_<id>` |
-
-## Algorithm adapters (`src/algorithms/<id>/kb_algo_<id>.m`)
-
-`out = kb_algo_<id>(v, w, C, acfg, seed)` for `dp`, `bnb`, `ilp`, `qubo`, `qubo_chz`; `acfg = cfg.<id>`, `seed = cfg.seed + 1000*k`. They call the algorithm and return the common struct `label`, `exact`, `proven_optimal`, `items`, `working_memory_bytes`, `operations`, `operations_unit`, `details`. Called by `kb_run_algorithm` through `L.adapter(id)` of the [loader](#algorithm-loader-srcalgorithmsalgorithm_loaderm); contract in [adding an algorithm](../adding-an-algorithm.md#adapter-contract).
-
-## Algorithm settings (`src/algorithms/<id>/kb_config_<id>.m`)
-
-`c = kb_config_<id>()` returns the default block `cfg.<id>` ([parameters](../../functional/parameters.md#algorithm-settings)); `benchmark_config` gets them for every registered id through `L.configs()` of the [loader](#algorithm-loader-srcalgorithmsalgorithm_loaderm).
+| `L = kp_algo_<id>_loader()` | `id`, `label`, `description`, `short_label`, `exact`, `reference`, `available` (handle → logical), `environment` (handle → struct) |
+| `[items, info] = kp_algo_<id>_main(v, w, C, acfg, seed, mark)` | the maths; trailing arguments optional, see below |
+| `c = kp_algo_<id>_config()` | the block `cfg.<id>` ([parameters](../../functional/parameters.md#algorithm-settings)), always with `repeats` |
+| `O = kp_algo_<id>_output()` | `O.run(v, w, C, acfg, seed)` → common result (`label`, `exact`, `proven_optimal`, `items`, `working_memory_bytes`, `operations`, `operations_unit`, `details`); `O.entry(acfg, env)` → `algorithms[]` entry; `O.schema.entry`, `O.schema.details` (JSON Schema structs) |
 
 ## Random numbers — [spec](../../functional/instances.md#portable-random-generator)
 
@@ -62,14 +55,16 @@ In `src/instances/`:
 
 | Function | Output | Spec |
 |---|---|---|
-| `[best, items, cost] = kb_knapsack_dp(v, w, C)` | `cost.operations` = $n(C+1)$, `cost.working_memory_bytes` (computed only if `cost` is requested) | [dp](../../functional/algorithms/dp.md) |
-| `[best, items, info] = kb_knapsack_bnb(v, w, C, max_nodes)` | `info.nodes`, `info.proven_optimal`, `info.working_memory_bytes`; `max_nodes` default `Inf` | [bnb](../../functional/algorithms/bnb.md) |
-| `[best, items, info] = kb_knapsack_ilp(v, w, C)` | `info.solver` (`'intlinprog'`/`'glpk'`), `info.status`, `info.proven_optimal`, `info.nodes` (`NaN` with glpk), `info.working_memory_bytes`. Error `kb_knapsack_ilp:noSolver` | [ilp](../../functional/algorithms/ilp.md) |
+| `[items, info] = kp_algo_dp_main(v, w, C)` | `info.value`, `info.operations` = $n(C+1)$, `info.working_memory_bytes` (computed only if `info` is requested) | [dp](../../functional/algorithms/dp.md) |
+| `[items, info] = kp_algo_bnb_main(v, w, C, acfg)` | `acfg.max_nodes` (default `Inf` when `acfg` is omitted); `info.value`, `info.nodes`, `info.proven_optimal`, `info.working_memory_bytes` | [bnb](../../functional/algorithms/bnb.md) |
+| `[items, info] = kp_algo_ilp_main(v, w, C)` | `info.value`, `info.solver` (`'intlinprog'`/`'glpk'`), `info.status`, `info.proven_optimal`, `info.nodes` (`NaN` with glpk), `info.working_memory_bytes`. Error `kp_algo_ilp_main:noSolver` | [ilp](../../functional/algorithms/ilp.md) |
+| `name = kb_ilp_solver_name()` (`ilp/modules/`) | `'intlinprog'` (MATLAB), `'glpk'`, or `''` if none | |
 
 ## QUBO — [spec](../../functional/algorithms/qubo.md)
 
 | Function | Description |
 |---|---|
+| `[items, info] = kp_algo_qubo_main(v, w, C, acfg, seed, mark)` | penalty → model → tabu search → decode; calls `mark('build')`, `mark('solve')`, `mark('decode')`; `info`: `penalty`, `variables`, `slack_bits`, `model_memory_bytes`, `energy`, `mode`, `iterations`, `move_evaluations`, `working_memory_bytes`, `sol` |
 | `[Q, c, d, K] = kb_knapsack2qubo(v, w, M, penalty)` | [model](../../functional/algorithms/qubo.md#13-matrix-form); `penalty` default 1; column vectors, dense `Q` |
 | `bits = kb_encode_slack(s, M)` | $K \times 1$ slack bits |
 | `[x, energy, stats] = kb_qubo_tabu_slack(v, w, C, penalty, Q, c, d, opts)` | slack-optimal search; `x` = full $(n+K) \times 1$ vector |
@@ -78,11 +73,11 @@ In `src/instances/`:
 
 `opts` = the `tabu` parameter group plus `seed` (set by the runner to `seed + 1000*k`). `stats`: `iterations`, `restarts`, `tenure`, `move_evaluations`, `working_memory_bytes`.
 
-Penalty rule (`kb_penalty(values, rule)`, in `src/helpers/`): a char `rule` → `max(values) + 1`, else `rule`.
+The QUBO functions are in `src/algorithms/qubo/modules/`. Penalty rule (`kb_penalty(values, rule)`, same folder): a char `rule` → `max(values) + 1`, else `rule`.
 
 ## `qubo_chz` — [spec](../../functional/algorithms/qubo_chz.md)
 
-`kb_chz_knapsack2qubo`, `kb_chz_encode_slack`, `kb_chz_qubo_tabu_slack`, `kb_chz_qubo_tabu`, `kb_chz_decode`: same signatures as the functions above, separate copies of the code. The runner uses the `qubo_chz` parameter group and seed `seed + 1000*k + seed_offset`.
+`kp_algo_qubo_chz_main` and, in `src/algorithms/qubo_chz/modules/`, `kb_chz_penalty`, `kb_chz_knapsack2qubo`, `kb_chz_encode_slack`, `kb_chz_qubo_tabu_slack`, `kb_chz_qubo_tabu`, `kb_chz_decode`: same signatures as the functions above, separate copies of the code. It uses the `qubo_chz` parameter group and seed `seed + 1000*k + seed_offset`.
 
 ## Infrastructure
 

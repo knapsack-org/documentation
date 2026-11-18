@@ -32,17 +32,17 @@ Each algorithm is run `repeats` times in a row on the instance ([parameters](par
 | `operations` | algorithm-specific work count, `null` if unknown |
 | `operations_unit` | `table cells` (dp) · `nodes` (bnb, ilp) · `move evaluations` (qubo, qubo_chz, sa, ising) · `items scanned` (greedy) · `fitness evaluations` (ga) · `table cells` (dp, fptas) |
 
-### Ratios to `dp`
+### Ratios to the reference
 
-`cost_ratio_vs_dp` compares each algorithm with `dp` on the same instance (> 1 = costlier):
+`cost_ratio_vs_reference` compares each algorithm with the reference algorithm (`dp`, subscript *ref*) on the same instance (> 1 = costlier):
 
 $$
-\text{time} = \frac{t}{\max(t_{dp},\ \varepsilon)},\qquad
-\text{cpu} = \frac{t^{cpu}}{\max(t^{cpu}_{dp},\ \varepsilon)},\qquad
-\text{memory} = \frac{m}{m_{dp}}\ (\text{null if either is 0 or missing}),
+\text{time} = \frac{t}{\max(t_{ref},\ \varepsilon)},\qquad
+\text{cpu} = \frac{t^{cpu}}{\max(t^{cpu}_{ref},\ \varepsilon)},\qquad
+\text{memory} = \frac{m}{m_{ref}}\ (\text{null if either is 0 or missing}),
 $$
 
-with $\varepsilon$ a tiny positive constant that avoids a division by zero (value per implementation). All three are `null` when `dp` is not among the selected algorithms.
+with $\varepsilon$ a tiny positive constant that avoids a division by zero (value per implementation). The reference always runs, so the ratios always exist (version 2 wrote `cost_ratio_vs_dp`, `null` when `dp` was not selected).
 
 ## Summary statistics
 
@@ -56,7 +56,7 @@ Per algorithm, over all instances (`summary.algorithms.<id>`):
 | `mean_cpu_time_s` | of `cpu_time_s` |
 | `mean_…`, `median_…`, `max_working_memory_bytes` | of `working_memory_bytes` |
 | `mean_operations`, `max_operations` | of `operations` |
-| `median_time_ratio_vs_dp`, `median_memory_ratio_vs_dp` | medians of the per-instance ratios |
+| `median_time_ratio_vs_reference`, `median_memory_ratio_vs_reference` | medians of the per-instance ratios |
 | `by_family[]` | per family, sorted by family name: `count`, `num_optimal`, `mean_gap_percent`, `mean_wall_time_s`, `max_wall_time_s`, `mean_working_memory_bytes` |
 
 Statistics ignore `null` values; a statistic over only `null`s is `null`. The median of an even count is the mean of the two middle values.

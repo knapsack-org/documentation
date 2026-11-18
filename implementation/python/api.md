@@ -14,43 +14,41 @@ Signatures and return values. Behaviour is specified in [functional/](../../func
 
 | Function | Description |
 |---|---|
-| `run_benchmark(overrides=None, output_dir=None, verbose=True) -> dict` | Full [run](../../functional/README.md#benchmark-run-in-one-paragraph). `overrides`: dict merged by `benchmark_config`. `output_dir`: default `<project>/output`. Raises `ValueError` on an unknown algorithm, `KeyError` on an unknown parameter. Returns the result dict + `output_file` |
-| `SCHEMA_VERSION` | `2` |
+| `run_benchmark() -> dict` | Full [run](../../functional/README.md#benchmark-run-in-one-paragraph) of every discovered algorithm on every instance; no parameter; writes to `<project>/output`. Raises `DiscoveryError` / `SchemaError` (see [README](README.md#run)). Returns the result dict + `output_file` |
+| `SCHEMA_VERSION` | `3` |
 
 ## Runner helpers (`helpers/`, one module per MATLAB `kb_*.m` helper)
 
 | Module · function | Description |
 |---|---|
-| `run_algorithm.run_algorithm(name, v, w, C, cfg, k, optimum) -> dict` | Runs one algorithm with its repeats and builds the [result object](../../functional/output-format.md#instancesresultsid) (without `cost_ratio_vs_dp`) |
-| `add_ratios_vs_dp.add_ratios_vs_dp(results) -> None` | Adds `cost_ratio_vs_dp` in place ([spec](../../functional/metrics.md#ratios-to-dp)) |
+| `discover.discover_algorithms() -> (algos, skipped)` | scans `algorithms/`; `algos`: list of dicts (alphabetical) with `id`, `label`, `short_label`, `exact`, `reference`, `environment` (dict), `output` (the `kp_algo_<id>_output` module); `skipped`: `[{id, reason}]`. Raises `DiscoveryError` |
+| `discover.algorithm_ids() -> list[str]`, `discover.contract_module(id, part)` | every folder id (alphabetical, available or not); the module `algorithms/<id>/kp_algo_<id>_<part>.py` |
+| `run_algorithm.run_algorithm(algo, v, w, C, cfg, k) -> dict` | Runs one discovered algorithm with its repeats (`algo["output"].run`), validates `details`, builds the [result object](../../functional/output-format.md#instancesresultsid); `is_optimal` / `gap_percent` are filled by `run_benchmark` once the reference value is known |
+| `add_ratios.add_ratios(results, ref) -> None` | Adds `cost_ratio_vs_reference` in place ([spec](../../functional/metrics.md#ratios-to-the-reference)) |
+| `schema.validate(x, schema, where="$") -> None` | Raises `schema.SchemaError` when `x` does not match the JSON Schema subset `schema` |
+| `phase_timer.phase_timer() -> (mark, times)` | phase timer for `kp_algo_<id>_main`: each `mark(name)` stores in `times[name]` the seconds since the previous mark |
 | `summary.summarize(runs, algos, total_time) -> dict` | [Summary statistics](../../functional/metrics.md#summary-statistics) |
 | `write_json.write_json(path, data) -> None` | JSON writer (see [README](README.md#json-writing)) |
 | `printing.print_instance(r, algos, log=print)`, `printing.print_summary(s, algos, total_time, out_file, log=print)`, `printing.human_bytes(b)` | console output |
 
-## `algorithms.algorithm_loader`
+## Algorithm packages (`algorithms/<id>/`)
 
-Everything the runner needs to load the algorithms (port of `algorithm_loader.m`); used by `config`, `benchmark`, `run_algorithm` and `cli`.
+Contract and skeletons: [adding an algorithm](../adding-an-algorithm.md). For every `<id>` (`bnb`, `dp`, `ilp`, `qubo`, `qubo_chz`, …):
 
-| Name | Description |
+| Module · name | Description |
 |---|---|
-| `ALGORITHMS` | registry, default run order: `("dp", "bnb", "ilp", "qubo", "qubo_chz")` |
-| `default_configs() -> dict` | default settings blocks, one key per id (`config_<id>()`) |
-| `check_algorithms(requested) -> list` | `ValueError` on an unknown id |
-| `adapter(name)` | the adapter `algo_<name>` of `algorithms/<name>/algo_<name>.py` (imported by name) |
-
-## Algorithm adapters (`algorithms/<id>/algo_<id>.py`)
-
-`algo_<id>(v, w, C, acfg, seed) -> dict` for `dp`, `bnb`, `ilp`, `qubo`, `qubo_chz`; `acfg = cfg["<id>"]`, `seed = cfg["seed"] + 1000*k`. They call the algorithm and return `label`, `exact`, `proven_optimal`, `items`, `array_bytes`, `operations`, `operations_unit`, `details`. `algo_qubo_chz` is an independent copy of `algo_qubo` (uses only `qubo_chz.py`). Contract: [adding an algorithm](../adding-an-algorithm.md#adapter-contract).
-
-## Algorithm settings (`algorithms/<id>/config_<id>.py`)
-
-`config_<id>() -> dict` returns the default block `cfg["<id>"]` ([parameters](../../functional/parameters.md#algorithm-settings)); `benchmark_config` gets them for every registered id through `algorithm_loader.default_configs()`.
+| `kp_algo_<id>_loader.kp_algo_<id>_loader() -> dict` | `id`, `label`, `description`, `short_label`, `exact`, `reference`, `available` (callable → bool), `environment` (callable → dict) |
+| `kp_algo_<id>_main.kp_algo_<id>_main(v, w, C, acfg=None, seed=None, mark=None) -> (items, info)` | the maths |
+| `kp_algo_<id>_config.kp_algo_<id>_config() -> dict` | the block `cfg["<id>"]` ([parameters](../../functional/parameters.md#algorithm-settings)), always with `repeats` |
+| `kp_algo_<id>_output.run(v, w, C, acfg, seed) -> dict` | common result: `label`, `exact`, `proven_optimal`, `items`, `working_memory_bytes`, `operations`, `operations_unit`, `details` |
+| `kp_algo_<id>_output.entry(acfg, env) -> dict` | `algorithms[]` entry |
+| `kp_algo_<id>_output.SCHEMA` | `{"entry": …, "details": …}` JSON Schemas |
 
 ## `config`
 
 | Name | Description |
 |---|---|
-| `benchmark_config(overrides=None) -> dict` | Deep copy of the [defaults](../../functional/parameters.md) with `overrides` merged recursively; `KeyError('Unknown option "a.b"')` on an unknown key |
+| `benchmark_config() -> dict` | The [parameters](../../functional/parameters.md): `seed`, `instances`, `algorithms` (every folder id, alphabetical), one block per id (from `kp_algo_<id>_config`) and `timing`. No argument, no merging |
 
 ## `rng` — [portable generator](../../functional/instances.md#portable-random-generator)
 
@@ -75,17 +73,19 @@ Module `instances.instances` (generator) and `instances.config_instances` (setti
 
 ## `dp` — [spec](../../functional/algorithms/dp.md)
 
-`knapsack_dp(v, w, C) -> (best: float, items: list[int], info: dict)` — `info = {"operations": n*(C+1), "array_bytes": …}`.
+`kp_algo_dp_main(v, w, C, acfg=None, seed=None, mark=None) -> (items, info)` — `info = {"value", "operations": n*(C+1), "working_memory_bytes"}`.
 
 ## `bnb` — [spec](../../functional/algorithms/bnb.md)
 
-`knapsack_bnb(v, w, C, max_nodes=math.inf) -> (best, items, info)` — `info = {"nodes", "proven_optimal", "array_bytes"}`.
+`kp_algo_bnb_main(v, w, C, acfg=None, seed=None, mark=None) -> (items, info)` — node limit `acfg["max_nodes"]` (`inf` when `acfg` is `None`); `info = {"value", "nodes", "proven_optimal", "working_memory_bytes"}`.
 
 ## `ilp` — [spec](../../functional/algorithms/ilp.md)
 
-`knapsack_ilp(v, w, C) -> (best, items, info)` — `info = {"solver": "scipy.optimize.milp (HiGHS)", "status", "proven_optimal", "nodes", "mip_gap", "array_bytes"}`; `nodes` / `mip_gap` are `None` if SciPy does not report them.
+`kp_algo_ilp_main(v, w, C, acfg=None, seed=None, mark=None) -> (items, info)` — `info = {"value", "solver": SOLVER, "status", "proven_optimal", "nodes", "mip_gap", "working_memory_bytes"}` with `SOLVER = "scipy.optimize.milp (HiGHS)"`; `nodes` / `mip_gap` are `None` if SciPy does not report them.
 
 ## `qubo` — [spec](../../functional/algorithms/qubo.md)
+
+`kp_algo_qubo_main(v, w, C, acfg, seed, mark=None) -> (items, info)`: penalty → model → tabu search → decode, calling `mark("build")`, `mark("solve")`, `mark("decode")`. The functions below are in `algorithms/qubo/modules/qubo.py`.
 
 | Function | Description |
 |---|---|
@@ -97,13 +97,13 @@ Module `instances.instances` (generator) and `instances.config_instances` (setti
 | `qubo_tabu(Q, c, d, opts) -> (x, energy, TabuStats)` | all-bits search |
 | `decode(x, v, w, C) -> dict` | keys `items`, `value`, `weight`, `feasible`, `repaired` (raw) and `final_items`, `final_value`, `final_weight` |
 | `penalty_value(values, rule) -> float` | any string → $\max v + 1$, else `float(rule)` |
-| `TabuStats` | dataclass: `iterations`, `restarts`, `tenure`, `move_evaluations`, `array_bytes` |
+| `TabuStats` | dataclass: `iterations`, `restarts`, `tenure`, `move_evaluations`, `array_bytes` (returned by `_main` as `working_memory_bytes`) |
 
 `opts` = the `tabu` parameter group plus `seed` (set by the runner to `seed + 1000·k`).
 
 ## `qubo_chz` — [spec](../../functional/algorithms/qubo_chz.md)
 
-Same functions and signatures as `qubo`; a separate copy of the code. The runner calls it with the `qubo_chz` parameter group and seed `seed + 1000·k + seed_offset`.
+`kp_algo_qubo_chz_main` and `algorithms/qubo_chz/modules/qubo_chz.py`: same functions and signatures as `qubo`; a separate copy of the code. It uses the `qubo_chz` parameter group and seed `seed + 1000·k + seed_offset`.
 
 ## `measure` — [cost metrics](../../functional/metrics.md#execution-cost)
 
@@ -114,4 +114,4 @@ Same functions and signatures as `qubo`; a separate copy of the code. The runner
 
 ## `cli`
 
-`main(argv=None) -> int` — [command line](README.md#run); returns 0, or 2 on a configuration error.
+`main(argv=None) -> int` — [command line](README.md#run): no options; returns 0, or 2 when any argument is given (0 for `-h` / `--help`).

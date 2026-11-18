@@ -21,7 +21,7 @@ The `instances` block is the instance generator's settings. A run writes it, wit
 
 | Key | Default | Meaning |
 |---|---|---|
-| `algorithms` | `["dp", "bnb", "ilp", "qubo", "qubo_chz"]` | algorithms to run, in this order. Unknown ids are an error. The reference optimum is always computed with `dp`, even if `dp` is not listed |
+| `algorithms` | `["dp", "bnb", "ilp", "qubo", "qubo_chz", "greedy", "sa", "ga", "ising", "fptas"]` | algorithms to run, in this order. Unknown ids are an error. The reference optimum is always computed with `dp`, even if `dp` is not listed |
 
 ## Algorithm settings
 
@@ -70,6 +70,52 @@ Own copy of the QUBO settings, so `qubo_chz` can be tuned without touching `qubo
 | `qubo_chz.seed_offset` | `0` | added to the tabu seed; `0` → same random starts as `qubo` |
 | `qubo_chz.tabu.*` | same as `qubo.tabu.*` | as `qubo.tabu.*` |
 | `qubo_chz.repeats` | `1` | |
+
+### `greedy`
+
+| Key | Default | Meaning |
+|---|---|---|
+| `greedy.repeats` | `20` | timed runs per instance ([greedy](algorithms/greedy.md)) |
+
+### `sa`
+
+| Key | Default | Meaning |
+|---|---|---|
+| `sa.penalty` | `"auto"` | $P$ of the energy: `"auto"` = $\max v + 1$, or a number |
+| `sa.restarts` | `10` | independent annealing runs |
+| `sa.steps_factor` | `500` | proposals per restart = factor $\cdot\, n$ |
+| `sa.t0_factor` | `1.0` | start temperature = factor $\cdot \max v$ |
+| `sa.t_end_factor` | `0.01` | end temperature = factor $\cdot \max v$ |
+| `sa.repeats` | `1` | ([sa](algorithms/sa.md)) |
+
+### `ga`
+
+| Key | Default | Meaning |
+|---|---|---|
+| `ga.pop_size` | `30` | individuals per generation (one elite kept) |
+| `ga.generations` | `50` | generations after the random start |
+| `ga.tournament` | `2` | individuals drawn per parent selection |
+| `ga.crossover_rate` | `0.9` | probability of uniform crossover |
+| `ga.mutation_factor` | `1.0` | per-bit flip probability = factor / $n$ |
+| `ga.repeats` | `1` | ([ga](algorithms/ga.md)) |
+
+### `ising`
+
+| Key | Default | Meaning |
+|---|---|---|
+| `ising.penalty` | `"auto"` | $P$ of the QUBO / Ising model: `"auto"` = $\max v + 1$, or a number |
+| `ising.restarts` | `5` | independent annealing runs |
+| `ising.steps_factor` | `2000` | proposals per restart = factor $\cdot\, N$ ($N = n + K$ spins) |
+| `ising.t0_factor` | `100` | start temperature = factor $\cdot\, P \max w$ |
+| `ising.t_end_factor` | `1` | end temperature = factor $\cdot\, P \max w$ |
+| `ising.repeats` | `1` | ([ising](algorithms/ising.md)) |
+
+### `fptas`
+
+| Key | Default | Meaning |
+|---|---|---|
+| `fptas.epsilon` | `0.1` | accuracy: value $\ge (1 - \varepsilon) V^*$ |
+| `fptas.repeats` | `5` | ([fptas](algorithms/fptas.md)) |
 
 ## `timing`
 

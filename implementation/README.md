@@ -31,6 +31,11 @@ Both projects use the same layout: helpers in `helpers/`, each algorithm in `alg
 | [Tabu, all-bits](../functional/algorithms/qubo.md#3-solver--tabu-search-mode-all-bits-comparison) | `qubo.qubo_tabu` | `kb_qubo_tabu` |
 | [Decode / repair](../functional/algorithms/qubo.md#4-decoding-and-repair) | `qubo.decode` | `kb_decode` |
 | [`qubo_chz`](../functional/algorithms/qubo_chz.md) | module `qubo_chz` (same function names) | `kb_chz_*` (same names with the `chz_` prefix) |
+| [`greedy`](../functional/algorithms/greedy.md) | `algorithms/greedy/kp_algo_greedy_main.py` | `kp_algo_greedy_main` |
+| [`sa`](../functional/algorithms/sa.md) | `algorithms/sa/kp_algo_sa_main.py` | `kp_algo_sa_main` |
+| [`ga`](../functional/algorithms/ga.md) | `algorithms/ga/kp_algo_ga_main.py` | `kp_algo_ga_main` |
+| [`ising`](../functional/algorithms/ising.md) — [model](../functional/algorithms/ising.md#1-model), [solver](../functional/algorithms/ising.md#2-solver--single-spin-flip-annealing), [decode](../functional/algorithms/ising.md#3-decoding-and-repair) | `algorithms/ising/kp_algo_ising_main.py`; `modules/ising.py`: `knapsack2ising`, `ising_anneal`, `decode` | `kp_algo_ising_main`; `modules/`: `kb_ising_model`, `kb_ising_anneal`, `kb_ising_decode` |
+| [`fptas`](../functional/algorithms/fptas.md) | `algorithms/fptas/kp_algo_fptas_main.py` | `kp_algo_fptas_main` |
 | [Quality metrics](../functional/metrics.md#quality) | `run_algorithm.run_algorithm` | `kb_run_algorithm` |
 | [Cost metrics](../functional/metrics.md#execution-cost) | `measure.measure`, `measure.process_memory` | `kb_run_algorithm`, `kb_process_memory`, `kb_bytes`, `whos` |
 | [Ratios to dp](../functional/metrics.md#ratios-to-dp) | `add_ratios_vs_dp.add_ratios_vs_dp` | `kb_add_ratios_vs_dp` |

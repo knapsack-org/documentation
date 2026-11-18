@@ -107,6 +107,11 @@ The inputs of the [instance generator](instances.md#generation-procedure), so th
 | `bnb` | `nodes`, `node_limit`, `node_limit_reached` | [bnb](algorithms/bnb.md#5-output) |
 | `ilp` | `solver`, `status`, optional `mip_gap` | [ilp](algorithms/ilp.md#reported-values) |
 | `qubo`, `qubo_chz` | `penalty`, `variables`, `slack_bits`, `model_memory_bytes`, `energy`, `iterations`, `raw_items`, `raw_value`, `raw_weight`, `feasible_before_repair`, `repaired`, `build_time_s`, `solve_time_s`, `decode_time_s` | [qubo](algorithms/qubo.md#5-reported-values) |
+| `greedy` | `greedy_value`, `single_value`, `chose_single` | [greedy](algorithms/greedy.md#5-reported-values) |
+| `sa` | `penalty`, `proposals`, `accepted`, `t_start`, `t_end` | [sa](algorithms/sa.md#5-reported-values) |
+| `ga` | `evaluations`, `generations` | [ga](algorithms/ga.md#5-reported-values) |
+| `ising` | `penalty`, `variables`, `slack_bits`, `model_memory_bytes`, `energy`, `proposals`, `accepted`, `raw_items`, `raw_value`, `raw_weight`, `feasible_before_repair`, `repaired`, `build_time_s`, `solve_time_s`, `decode_time_s` | [ising](algorithms/ising.md#6-reported-values) |
+| `fptas` | `epsilon`, `scale`, `scaled_profit_total`, `table_cells` | [fptas](algorithms/fptas.md#5-reported-values) |
 
 ## Abridged example
 

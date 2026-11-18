@@ -68,12 +68,13 @@ knapsack-benchmark-python/
 │   ├── benchmark.py    runner: generate → run each algorithm → summary → JSON
 │   ├── config.py       defaults and override merging
 │   ├── helpers/
-│   │   ├── check_algorithms.py, run_algorithm.py, add_ratios_vs_dp.py,
+│   │   ├── run_algorithm.py, add_ratios_vs_dp.py,
 │   │   │   summary.py, write_json.py, printing.py      runner helpers
 │   │   ├── rng.py          portable Park–Miller generator
 │   │   └── measure.py      time / CPU / memory measurement
 │   ├── instances/      instances.py (generator), config_instances.py (settings cfg["instances"])
 │   └── algorithms/
+│       ├── algorithm_loader.py   registry, default settings, id check, adapter lookup
 │       ├── each folder also holds its benchmark adapter algo_<id>.py
 │       ├── dp/dp.py · bnb/bnb.py · ilp/ilp.py
 │       ├── qubo/qubo.py    QUBO model, slack encoding, both tabu searches, decode, penalty

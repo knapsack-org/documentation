@@ -15,19 +15,28 @@ Signatures and return values. Behaviour is specified in [functional/](../../func
 | Function | Description |
 |---|---|
 | `run_benchmark(overrides=None, output_dir=None, verbose=True) -> dict` | Full [run](../../functional/README.md#benchmark-run-in-one-paragraph). `overrides`: dict merged by `benchmark_config`. `output_dir`: default `<project>/output`. Raises `ValueError` on an unknown algorithm, `KeyError` on an unknown parameter. Returns the result dict + `output_file` |
-| `SCHEMA_VERSION` | `1` |
+| `SCHEMA_VERSION` | `2` |
 
 ## Runner helpers (`helpers/`, one module per MATLAB `kb_*.m` helper)
 
 | Module · function | Description |
 |---|---|
-| `check_algorithms.check_algorithms(requested) -> list` | `ValueError` on an unknown id |
 | `run_algorithm.run_algorithm(name, v, w, C, cfg, k, optimum) -> dict` | Runs one algorithm with its repeats and builds the [result object](../../functional/output-format.md#instancesresultsid) (without `cost_ratio_vs_dp`) |
-| `run_algorithm.adapter(name)` | the adapter `algo_<name>` of `algorithms/<name>/algo_<name>.py` (imported by name) |
 | `add_ratios_vs_dp.add_ratios_vs_dp(results) -> None` | Adds `cost_ratio_vs_dp` in place ([spec](../../functional/metrics.md#ratios-to-dp)) |
 | `summary.summarize(runs, algos, total_time) -> dict` | [Summary statistics](../../functional/metrics.md#summary-statistics) |
 | `write_json.write_json(path, data) -> None` | JSON writer (see [README](README.md#json-writing)) |
 | `printing.print_instance(r, algos, log=print)`, `printing.print_summary(s, algos, total_time, out_file, log=print)`, `printing.human_bytes(b)` | console output |
+
+## `algorithms.algorithm_loader`
+
+Everything the runner needs to load the algorithms (port of `algorithm_loader.m`); used by `config`, `benchmark`, `run_algorithm` and `cli`.
+
+| Name | Description |
+|---|---|
+| `ALGORITHMS` | registry, default run order: `("dp", "bnb", "ilp", "qubo", "qubo_chz")` |
+| `default_configs() -> dict` | default settings blocks, one key per id (`config_<id>()`) |
+| `check_algorithms(requested) -> list` | `ValueError` on an unknown id |
+| `adapter(name)` | the adapter `algo_<name>` of `algorithms/<name>/algo_<name>.py` (imported by name) |
 
 ## Algorithm adapters (`algorithms/<id>/algo_<id>.py`)
 
@@ -35,13 +44,12 @@ Signatures and return values. Behaviour is specified in [functional/](../../func
 
 ## Algorithm settings (`algorithms/<id>/config_<id>.py`)
 
-`config_<id>() -> dict` returns the default block `cfg["<id>"]` ([parameters](../../functional/parameters.md#algorithm-settings)); `benchmark_config` imports it by name for every id of `config.ALGORITHMS` (the registry).
+`config_<id>() -> dict` returns the default block `cfg["<id>"]` ([parameters](../../functional/parameters.md#algorithm-settings)); `benchmark_config` gets them for every registered id through `algorithm_loader.default_configs()`.
 
 ## `config`
 
 | Name | Description |
 |---|---|
-| `ALGORITHMS` | `("dp", "bnb", "ilp", "qubo", "qubo_chz")` |
 | `benchmark_config(overrides=None) -> dict` | Deep copy of the [defaults](../../functional/parameters.md) with `overrides` merged recursively; `KeyError('Unknown option "a.b"')` on an unknown key |
 
 ## `rng` — [portable generator](../../functional/instances.md#portable-random-generator)

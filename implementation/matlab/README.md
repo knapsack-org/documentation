@@ -49,7 +49,7 @@ knapsack-benchmark-matlab/
 ├── benchmark_config.m    defaults and override merging
 ├── src/
 │   ├── helpers/
-│   │   ├── kb_check_algorithms.m, kb_ilp_solver_name.m, kb_run_algorithm.m,
+│   │   ├── kb_ilp_solver_name.m, kb_run_algorithm.m,
 │   │   │   kb_add_ratios_vs_dp.m, kb_summary.m, kb_penalty.m, kb_interpreter.m,
 │   │   │   kb_print_instance.m, kb_print_summary.m, kb_human_bytes.m   runner helpers
 │   │   ├── kb_seed.m, kb_lcg.m, kb_randi.m      portable generator
@@ -57,6 +57,7 @@ knapsack-benchmark-matlab/
 │   │   └── kb_write_json.m
 │   ├── instances/   kb_generate_instances.m (generator), kb_config_instances.m (settings cfg.instances)
 │   └── algorithms/
+│       ├── algorithm_loader.m   registry, default settings, id check, adapter lookup
 │       ├── each folder also holds its benchmark adapter kb_algo_<id>.m
 │       ├── dp/kb_knapsack_dp.m · bnb/kb_knapsack_bnb.m · ilp/kb_knapsack_ilp.m
 │       ├── qubo/        kb_knapsack2qubo.m, kb_encode_slack.m, kb_qubo_tabu_slack.m, kb_qubo_tabu.m, kb_decode.m

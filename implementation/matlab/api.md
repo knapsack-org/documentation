@@ -15,8 +15,6 @@ Called by `run_benchmark`; each is its own file, so it can be called and tested 
 
 | Function | Description |
 |---|---|
-| `ids = kb_algorithm_ids()` | registry of algorithm ids, default run order |
-| `algos = kb_check_algorithms(requested)` | validates ids (error `run_benchmark:unknownAlgorithm`); drops `ilp` with warning `run_benchmark:noIlp` when no solver exists |
 | `name = kb_ilp_solver_name(algos)` | `'intlinprog'` (MATLAB), `'glpk'`, or `''` if none or `ilp` not in `algos` |
 | `res = kb_run_algorithm(name, v, w, C, cfg, k, optimum)` | runs one algorithm with its timing repeats; builds the [result object](../../functional/output-format.md) (quality + `cost`) |
 | `results = kb_add_ratios_vs_dp(results, algos)` | adds `cost_ratio_vs_dp` ([spec](../../functional/metrics.md#ratios-to-dp)) |
@@ -26,13 +24,24 @@ Called by `run_benchmark`; each is its own file, so it can be called and tested 
 | `kb_print_instance(r, algos)`, `kb_print_summary(s, algos, total_time, out_file)` | console output |
 | `s = kb_human_bytes(b)` | byte count as `B`/`kB`/`MB` text |
 
+## Algorithm loader (`src/algorithms/algorithm_loader.m`)
+
+`L = algorithm_loader()` groups everything the runner needs to load the algorithms; used by `benchmark_config`, `run_benchmark` and `kb_run_algorithm`.
+
+| Field | Description |
+|---|---|
+| `L.ids` | registry of algorithm ids, default run order (cell) |
+| `c = L.configs()` | struct of the default settings blocks, one field per id (`kb_config_<id>()`) |
+| `algos = L.check(requested)` | validates ids (error `run_benchmark:unknownAlgorithm`); drops `ilp` with warning `run_benchmark:noIlp` when no solver exists |
+| `f = L.adapter(id)` | handle to the adapter `kb_algo_<id>` |
+
 ## Algorithm adapters (`src/algorithms/<id>/kb_algo_<id>.m`)
 
-`out = kb_algo_<id>(v, w, C, acfg, seed)` for `dp`, `bnb`, `ilp`, `qubo`, `qubo_chz`; `acfg = cfg.<id>`, `seed = cfg.seed + 1000*k`. They call the algorithm and return the common struct `label`, `exact`, `proven_optimal`, `items`, `working_memory_bytes`, `operations`, `operations_unit`, `details`. Called by `kb_run_algorithm` through `str2func(['kb_algo_' id])`; contract in [adding an algorithm](../adding-an-algorithm.md#adapter-contract).
+`out = kb_algo_<id>(v, w, C, acfg, seed)` for `dp`, `bnb`, `ilp`, `qubo`, `qubo_chz`; `acfg = cfg.<id>`, `seed = cfg.seed + 1000*k`. They call the algorithm and return the common struct `label`, `exact`, `proven_optimal`, `items`, `working_memory_bytes`, `operations`, `operations_unit`, `details`. Called by `kb_run_algorithm` through `L.adapter(id)` of the [loader](#algorithm-loader-srcalgorithmsalgorithm_loaderm); contract in [adding an algorithm](../adding-an-algorithm.md#adapter-contract).
 
 ## Algorithm settings (`src/algorithms/<id>/kb_config_<id>.m`)
 
-`c = kb_config_<id>()` returns the default block `cfg.<id>` ([parameters](../../functional/parameters.md#algorithm-settings)); `benchmark_config` calls it for every id of `ids = kb_algorithm_ids()` (`src/helpers/`, the registry).
+`c = kb_config_<id>()` returns the default block `cfg.<id>` ([parameters](../../functional/parameters.md#algorithm-settings)); `benchmark_config` gets them for every registered id through `L.configs()` of the [loader](#algorithm-loader-srcalgorithmsalgorithm_loaderm).
 
 ## Random numbers — [spec](../../functional/instances.md#portable-random-generator)
 

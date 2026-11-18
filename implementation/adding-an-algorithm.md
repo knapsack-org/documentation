@@ -13,7 +13,7 @@ Use `<id>` for the new id (lower case, `[a-z0-9_]`, e.g. `greedy`).
 | 3 | Algorithm | `kb_<name>.m` (one or more files) | `<id>.py` |
 | 4 | Settings | `kb_config_<id>.m` → struct, must contain `repeats` | `config_<id>.py`: `config_<id>() -> dict`, must contain `repeats` |
 | 5 | Adapter | `kb_algo_<id>.m`: `out = kb_algo_<id>(v, w, C, acfg, seed)` | `algo_<id>.py`: `algo_<id>(v, w, C, acfg, seed) -> dict` |
-| 6 | Register | add `'<id>'` to `src/helpers/kb_algorithm_ids.m` | add `"<id>"` to `ALGORITHMS` in `config.py` |
+| 6 | Register | add `'<id>'` to `L.ids` in `src/algorithms/algorithm_loader.m` | add `"<id>"` to `ALGORITHMS` in `algorithms/algorithm_loader.py` |
 | 7 | Test | `tests/test_p01.m`: P01 optimum 309 (exact) or a feasible value (heuristic) | `tests/test_p01.py`, same check |
 | 8 | Docs | [traceability matrix](README.md#traceability-matrix), [MATLAB reference](matlab/api.md), project README | [Python reference](python/api.md), project README |
 

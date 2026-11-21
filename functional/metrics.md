@@ -2,6 +2,8 @@
 
 Each algorithm result on each instance is measured on **quality** (how good the packing is) and **execution cost** (what it took to get it). The JSON field names are given in `code`; the full layout is in [output format](output-format.md).
 
+The benchmarks measure each result (raw results). Since `schema_version` 4, knapsack-server's output service (`libs/output`) computes the fields that need the reference: `is_optimal`, `gap_percent`, `cost_ratio_vs_reference`, `optimum`, `optimal_items` and the [summary](#summary-statistics). It does this once for both environments.
+
 ## Quality
 
 Let $S$ be the returned item set and $V^*$ the [`dp`](algorithms/dp.md) optimum of the instance.
@@ -42,7 +44,7 @@ $$
 \text{memory} = \frac{m}{m_{ref}}\ (\text{null if either is 0 or missing}),
 $$
 
-with $\varepsilon$ a tiny positive constant that avoids a division by zero (value per implementation). The reference always runs, so the ratios always exist (version 2 wrote `cost_ratio_vs_dp`, `null` when `dp` was not selected).
+with $\varepsilon = 10^{-12}$, set by the output service and the same for both environments (MATLAB files built before version 4 used `eps` and may differ in these ratios). The reference always runs, so the ratios always exist (version 2 wrote `cost_ratio_vs_dp`, `null` when `dp` was not selected).
 
 ## Summary statistics
 

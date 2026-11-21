@@ -24,11 +24,13 @@ From a terminal in the project folder:
 
 ```bash
 octave-cli --eval "run_benchmark"
+octave-cli --eval "run_benchmark('req.json', 'instances.json', 'out');"   % each argument optional ('' = absent)
+octave-cli --eval "run_benchmark('--describe');"                         % algorithms, default settings, JSON Schemas
 ```
 
-or, in the Octave/MATLAB desktop, `cd` to the folder and call `run_benchmark`. A full default run of the five core algorithms takes ≈ 3–4 minutes in Octave (185.1 s and 214.1 s measured).
+or, in the Octave/MATLAB desktop, `cd` to the folder and call `run_benchmark`. A full default run of the 10 algorithms is ≈ 1,050 s of algorithm time in Octave (one process, after the 2026-11-21 speed-ups); knapsack-server splits the instances over several processes.
 
-There are **no options**: `run_benchmark()` takes no argument (any argument is an error) and runs every algorithm found in `src/algorithms/` on every instance. To change a [parameter](../../functional/parameters.md), edit the file that defines it:
+The arguments are a [run request](../../functional/output-format.md#run-request) file, an [instance set](../../functional/output-format.md#instance-set-file) used instead of the generator, and the output folder (default `output/run-dd-mm-yy-hh-mm/`). The run writes [`raw.json`](../../functional/output-format.md#raw-results-knapsack-raw-v1) and, without an instance set, `instances.json`; the run file (`schema_version` 4) is built by `pnpm -C <knapsack-server> knapsack-output <out dir>`. Without a request every algorithm found in `src/algorithms/` runs on every generated instance. To change a default [parameter](../../functional/parameters.md), edit the file that defines it:
 
 | Parameter | File |
 |---|---|
@@ -37,35 +39,34 @@ There are **no options**: `run_benchmark()` takes no argument (any argument is a
 | `<id>.*` (e.g. `bnb.max_nodes`, `qubo.tabu.mode`, `qubo_chz.seed_offset`) | `src/algorithms/<id>/kp_algo_<id>_config.m` |
 
 ```matlab
-result = run_benchmark();  result.output_file
+raw = run_benchmark('', '', 'output/try');   % raw results; output/try/raw.json, output/try/instances.json
 ```
 
-Errors at discovery (`kb_discover_algorithms:*`): missing contract file, loader id ≠ folder name, duplicate `.m` name across algorithm folders, not exactly one available exact reference. An unavailable algorithm (e.g. `ilp` without a solver) gives warning `run_benchmark:unavailable` and is listed in `skipped_algorithms`. An output that does not match its schema gives `kb_validate_schema:invalid`. The output folder is always `<project>/output`.
+Errors at discovery (`kb_discover_algorithms:*`): missing contract file, loader id ≠ folder name, duplicate `.m` name across algorithm folders, not exactly one available exact reference. An unavailable algorithm (e.g. `ilp` without a solver) gives warning `run_benchmark:unavailable` and is listed in `skipped_algorithms`. An unknown key in a request is an error (`kb_merge_settings`).
 
 ## Project layout
 
 ```
 knapsack-benchmark-matlab/
-├── run_benchmark.m       entry point, no argument: discover → generate → run each algorithm → summary → JSON
+├── run_benchmark.m       entry point: discover → generate or read instances → run each algorithm (timed) → raw.json
 ├── benchmark_config.m    master seed + settings collected from src/instances and src/algorithms/<id>
 ├── src/
 │   ├── helpers/          generic code, no algorithm names
 │   │   ├── kb_discover_algorithms.m   scan src/algorithms/, check the folder contract, reference, availability
-│   │   ├── kb_run_algorithm.m, kb_validate_schema.m, kb_phase_timer.m,
-│   │   │   kb_add_ratios.m, kb_summary.m, kb_interpreter.m,
-│   │   │   kb_print_instance.m, kb_print_summary.m, kb_human_bytes.m   runner helpers
-│   │   ├── kb_seed.m, kb_lcg.m, kb_randi.m      portable generator
+│   │   ├── kb_run_algorithm.m, kb_merge_settings.m, kb_phase_timer.m, kb_interpreter.m,
+│   │   │   kb_print_instance.m, kb_print_progress.m   runner helpers, console and progress lines
+│   │   ├── kb_seed.m, kb_lcg.m, kb_lcg_states.m, kb_randi.m      portable generator
 │   │   ├── kb_bytes.m, kb_process_memory.m       memory measurement
 │   │   └── kb_write_json.m
 │   ├── instances/   kb_generate_instances.m (generator), kb_config_instances.m (settings cfg.instances)
 │   └── algorithms/       one self-contained folder per algorithm, nothing else
-│       ├── <id>/kp_algo_<id>_loader.m, _main.m, _config.m, _output.m (+ optional modules/)
+│       ├── <id>/kp_algo_<id>_loader.m, _main.m, _config.m, _output.m, _output.schema.json (+ optional modules/)
 │       ├── dp/ · bnb/      the four files only
 │       ├── ilp/modules/    kb_ilp_solver_name.m (used by the loader's availability check)
 │       ├── qubo/modules/   kb_penalty.m, kb_knapsack2qubo.m, kb_encode_slack.m, kb_qubo_tabu_slack.m, kb_qubo_tabu.m, kb_decode.m
 │       └── qubo_chz/modules/   kb_chz_*.m: copies of the six QUBO modules
 ├── tests/test_p01.m
-└── output/               run-*.json (git-ignored)
+└── output/               run-*/raw.json, instances.json (git-ignored)
 ```
 
 `run_benchmark` adds `src/` and all its subfolders to the path itself (`genpath`).

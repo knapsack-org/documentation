@@ -6,8 +6,8 @@ Signatures and outputs. Behaviour is specified in [functional/](../../functional
 
 | Function | Description |
 |---|---|
-| `result = run_benchmark()` | Full [run](../../functional/README.md#benchmark-run-in-one-paragraph) of every discovered algorithm on every instance; no argument. Writes `output/run-dd-mm-yy-hh-mm.json`; returns the written struct plus `output_file` |
-| `cfg = benchmark_config()` | The [parameters](../../functional/parameters.md): `seed`, `instances` (from `kb_config_instances`), `algorithms` (every folder id, alphabetical) and one block per id (from `kp_algo_<id>_config`). No argument, no merging |
+| `raw = run_benchmark(request_file, instances_file, out_dir)` | Full [run](../../functional/README.md#benchmark-run-in-one-paragraph). Every argument is optional (`''` = absent): a [run request](../../functional/output-format.md#run-request) file, an [instance set](../../functional/output-format.md#instance-set-file) used instead of the generator, and the output folder (default `output/run-dd-mm-yy-hh-mm/`). Writes [`raw.json`](../../functional/output-format.md#raw-results-knapsack-raw-v1) and, without an instance set, `instances.json`; returns the raw struct. `run_benchmark('--describe')` prints the algorithms, default settings and JSON Schemas (the knapsack-server catalog) |
+| `cfg = benchmark_config(request)` | The [parameters](../../functional/parameters.md): `seed`, `instances` (from `kb_config_instances`), `algorithms` and one block per id (from `kp_algo_<id>_config`). The optional request struct is merged in with `kb_merge_settings`; an unknown key is an error |
 
 ## Runner helpers (`src/helpers/`)
 
@@ -16,14 +16,13 @@ Called by `run_benchmark`; each is its own file, so it can be called and tested 
 | Function | Description |
 |---|---|
 | `[algos, skipped] = kb_discover_algorithms()` | scans `src/algorithms/`; `algos`: struct array (alphabetical) with `id`, `label`, `short_label`, `exact`, `reference`, `environment` (struct), `output` (the `kp_algo_<id>_output` struct); `skipped`: cell of `{id, reason}`. Errors `kb_discover_algorithms:badId`, `:missingFile`, `:idMismatch`, `:duplicateName`, `:reference` |
-| `res = kb_run_algorithm(algo, v, w, C, cfg, k)` | runs one discovered algorithm with its timing repeats (`algo.output.run`); validates `details`; builds the [result object](../../functional/output-format.md) (quality + `cost`); `is_optimal` / `gap_percent` are filled by `run_benchmark` once the reference value is known |
-| `results = kb_add_ratios(results, ids, ref)` | adds `cost_ratio_vs_reference` ([spec](../../functional/metrics.md#ratios-to-the-reference)) |
-| `kb_validate_schema(x, schema, where)` | errors `kb_validate_schema:invalid` (message starts with `where`) when `x` does not match the JSON Schema subset `schema` (struct from `jsondecode`) |
+| `res = kb_run_algorithm(algo, v, w, C, cfg, k)` | runs one discovered algorithm with its timing repeats (`algo.output.run`) on instance `k` (global id, seed `cfg.seed + 1000 k`) and builds the raw [result object](../../functional/output-format.md#raw-results-knapsack-raw-v1) (quality + `cost`). knapsack-server's output service computes `is_optimal`, `gap_percent` and the ratios |
+| `out = kb_merge_settings(base, override, where)` | merges a request block into a settings struct; errors on an unknown key |
 | `[mark, times] = kb_phase_timer()` | phase timer for `kp_algo_<id>_main`: each `mark('name')` stores in the `containers.Map` `times('name')` the seconds since the previous mark |
-| `s = kb_summary(runs, algos, total_time)` | [summary statistics](../../functional/metrics.md#summary-statistics) |
 | `name = kb_interpreter()` | `'GNU Octave'` or `'MATLAB'` |
-| `kb_print_instance(r, algos)`, `kb_print_summary(s, algos, total_time, out_file)` | console output |
-| `s = kb_human_bytes(b)` | byte count as `B`/`kB`/`MB` text |
+| `kb_print_instance(...)`, `kb_print_progress(instance, algorithm, event)` | console output, including the progress lines `@@progress {"instance":…,"algorithm":…,"event":…}` |
+| `txt = kb_write_json(file, data, algos)` | JSON writer; the schema files are inserted verbatim |
+| `kb_lcg_states` | the next generator states as one vector operation (used by the randomised algorithms) |
 
 ## Algorithm folders (`src/algorithms/<id>/`)
 
@@ -34,7 +33,7 @@ Contract and skeletons: [adding an algorithm](../adding-an-algorithm.md). For ev
 | `L = kp_algo_<id>_loader()` | `id`, `label`, `description`, `short_label`, `exact`, `reference`, `available` (handle → logical), `environment` (handle → struct) |
 | `[items, info] = kp_algo_<id>_main(v, w, C, acfg, seed, mark)` | the maths; trailing arguments optional, see below |
 | `c = kp_algo_<id>_config()` | the block `cfg.<id>` ([parameters](../../functional/parameters.md#algorithm-settings)), always with `repeats` |
-| `O = kp_algo_<id>_output()` | `O.run(v, w, C, acfg, seed)` → common result (`label`, `exact`, `proven_optimal`, `items`, `working_memory_bytes`, `operations`, `operations_unit`, `details`); `O.entry(acfg, env)` → `algorithms[]` entry; `O.schema.entry`, `O.schema.details` (JSON Schema structs) |
+| `O = kp_algo_<id>_output()` | `O.run(v, w, C, acfg, seed)` → common result (`label`, `exact`, `proven_optimal`, `items`, `working_memory_bytes`, `operations`, `operations_unit`, `details`); `O.entry(acfg, env)` → `algorithms[]` entry. Its JSON Schema is the file `kp_algo_<id>_output.schema.json` next to it (`entry`, `config`, `details`), byte-identical to the Python file |
 
 ## Random numbers — [spec](../../functional/instances.md#portable-random-generator)
 

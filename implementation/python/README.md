@@ -24,10 +24,11 @@ pip install -e ".[memory,test]"
 ## Run
 
 ```bash
-knapsack-benchmark                          # or: python -m knapsack_benchmark
+knapsack-benchmark [--request req.json] [--instances inst.json] [--out DIR]   # or: python -m knapsack_benchmark ...
+knapsack-benchmark --describe        # algorithms, default settings and JSON Schemas as JSON
 ```
 
-There are **no options**: any argument prints the usage and exits with code **2** (`-h` / `--help` with code 0). Every run uses every algorithm found in `algorithms/` on every instance and writes to `<project>/output`. To change a [parameter](../../functional/parameters.md), edit the file that defines it:
+`--request` is a [run request](../../functional/output-format.md#run-request), `--instances` an [instance set](../../functional/output-format.md#instance-set-file) used instead of the generator, and `--out` the output folder (default `output/run-dd-mm-yy-hh-mm/`). The run writes [`raw.json`](../../functional/output-format.md#raw-results-knapsack-raw-v1) and, without `--instances`, `instances.json`; the run file (`schema_version` 4) is built by `pnpm -C <knapsack-server> knapsack-output <out dir>`. Without a request every algorithm found in `algorithms/` runs on every generated instance. To change a default [parameter](../../functional/parameters.md), edit the file that defines it:
 
 | Parameter | File (under `src/knapsack_benchmark/`) |
 |---|---|
@@ -39,13 +40,13 @@ From Python:
 
 ```python
 from knapsack_benchmark import run_benchmark
-res = run_benchmark()            # no parameters
-res["summary"]["algorithms"]["qubo"]["mean_gap_percent"], res["output_file"]
+raw = run_benchmark({"instances": {"count": 5}}, out_dir="output/try")   # raw results
+raw["instances"][0]["results"]["qubo"]["value"]
 ```
 
-Errors: `helpers.discover.DiscoveryError` (bad folder name, missing contract file, loader id ≠ folder name, not exactly one available exact reference), `helpers.schema.SchemaError` (an output that does not match its schema). An unavailable algorithm is skipped with a warning and listed in `skipped_algorithms`.
+Errors: `helpers.discover.DiscoveryError` (bad folder name, missing contract file, loader id ≠ folder name, not exactly one available exact reference), `ValueError` (unknown key in a request). An unavailable algorithm is skipped with a warning and listed in `skipped_algorithms`.
 
-`run_benchmark` returns the same dict that is written to JSON, plus `output_file`.
+`run_benchmark` returns the dict written to `raw.json`.
 
 ## Project layout
 
@@ -55,23 +56,22 @@ knapsack-benchmark-python/
 ├── src/knapsack_benchmark/
 │   ├── __init__.py     exports run_benchmark, benchmark_config; __version__
 │   ├── __main__.py     python -m knapsack_benchmark
-│   ├── cli.py          command line (no options)
-│   ├── benchmark.py    runner: discover → generate → run each algorithm → summary → JSON
+│   ├── cli.py          command line (--request, --instances, --out, --describe)
+│   ├── benchmark.py    runner: discover → generate or read instances → run each algorithm (measured) → raw.json
 │   ├── config.py       master seed, timing option, settings collected from instances/ and algorithms/<id>
 │   ├── helpers/        generic code, no algorithm names
 │   │   ├── discover.py     scan algorithms/, check the folder contract, reference, availability
-│   │   ├── run_algorithm.py, schema.py, phase_timer.py, add_ratios.py,
-│   │   │   summary.py, write_json.py, printing.py      runner helpers
+│   │   ├── run_algorithm.py, phase_timer.py, write_json.py, printing.py      runner helpers
 │   │   ├── rng.py          portable Park–Miller generator
 │   │   └── measure.py      time / CPU / memory measurement
 │   ├── instances/      instances.py (generator), config_instances.py (settings cfg["instances"])
 │   └── algorithms/     one self-contained package per algorithm
-│       ├── <id>/kp_algo_<id>_loader.py, _main.py, _config.py, _output.py (+ optional modules/)
+│       ├── <id>/kp_algo_<id>_loader.py, _main.py, _config.py, _output.py, _output.schema.json (+ optional modules/)
 │       ├── bnb/ · dp/ · ilp/     the four files only
 │       ├── qubo/modules/qubo.py  QUBO model, slack encoding, both tabu searches, decode, penalty
 │       └── qubo_chz/modules/qubo_chz.py   independent copy of qubo.py
 ├── tests/test_p01.py, tests/test_parity.py
-└── output/             run-*.json (git-ignored)
+└── output/             run-*/raw.json, instances.json (git-ignored)
 ```
 
 ## Language-specific choices

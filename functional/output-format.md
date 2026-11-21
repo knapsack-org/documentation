@@ -1,15 +1,20 @@
-# Output format (JSON, `schema_version` 3)
+# Output format (JSON, `schema_version` 4)
 
-One run writes one UTF-8 JSON file named `run-dd-mm-yy-hh-mm.json` (day-month-year-hour-minute of the end of the run). This is the contract between the two benchmark implementations and the [Knapview](https://github.com/knapsack-org/knapview) viewer.
+The run file is one UTF-8 JSON file. It is the contract between the two benchmark implementations, [knapsack-server](https://github.com/knapsack-org/knapsack-server) and the [Knapview](https://github.com/knapsack-org/knapview) viewer.
+
+Since version 4 the benchmarks no longer write it themselves. A run writes [raw results](#raw-results-knapsack-raw-v1) (`raw.json`) and the [instance set](#instance-set-file) (`instances.json`). knapsack-server's output service builds the run file from them and adds the optimum, the gaps, the ratios and the summary:
+
+- **Standalone run:** `pnpm -C <knapsack-server> knapsack-output <out dir>` writes `run-dd-mm-yy-hh-mm.json` (day-month-year-hour-minute of the end of the run).
+- **Server run:** one file per environment, `runs/<runId>/<env>.json.gz`, plus `instances.json.gz` and `manifest.json`.
 
 ## Versioning
 
-- `schema_version` (integer) identifies the structure; current value **3**, identical in both implementations.
+- `schema_version` (integer) identifies the structure; current value **4**, the same for both environments.
 - It must be increased in **both** implementations on any breaking change (renamed/removed field, changed type or meaning). Adding an optional field is not breaking.
-- Readers reject a version they do not support. Knapview reads only version 3 (older files must be re-run).
-- History: **1** (2026-11-14) first version. **2** (2026-11-16) `algorithms` is a list of objects with each algorithm's settings; per-algorithm parameter blocks; `instance_config` and the `instances` parameter block ([renamed keys](parameters.md#keys-renamed-in-schema_version-2)). **3** (2026-11-18) algorithms found by scanning their folders and listed in alphabetical order; `algorithms[]` gains `description`, `short_label` and `reference`, labels are capitalised; new `skipped_algorithms`; `environment.ilp_solver` → `environment.algorithms.ilp.solver`; ratios renamed `*_vs_dp` → `*_vs_reference`; generated `description`.
+- Readers reject a version they do not support. Knapview reads only version 4 (older files must be re-run).
+- History: **1** (2026-11-14) first version. **2** (2026-11-16) `algorithms` is a list of objects with each algorithm's settings; per-algorithm parameter blocks; `instance_config` and the `instances` parameter block ([renamed keys](parameters.md#keys-renamed-in-schema_version-2)). **3** (2026-11-18) algorithms found by scanning their folders and listed in alphabetical order; `algorithms[]` gains `description`, `short_label` and `reference`, labels are capitalised; new `skipped_algorithms`; `environment.ilp_solver` → `environment.algorithms.ilp.solver`; ratios renamed `*_vs_dp` → `*_vs_reference`; generated `description`. **4** (2026-11-20) built by knapsack-server's output service from raw results (the benchmarks no longer compute `is_optimal`, `gap_percent`, ratios or the summary); optional [`server`](#server) and [`instance_set`](#instance_set) blocks; `summary.total_time_seconds` is the execution wall clock. JSON Schema (2020-12): `knapsack-server/libs/contracts/schemas/run-v4.schema.json`.
 
-Each algorithm describes its own two blocks (its `algorithms[]` entry and its `results.<id>.details`) with a JSON Schema, and the implementations check every run against it before writing the file ([adding an algorithm](../implementation/adding-an-algorithm.md#output-contract--kp_algo_id_output)).
+Each algorithm describes its own blocks with a JSON Schema file, `algorithms/<id>/kp_algo_<id>_output.schema.json`: its `algorithms[]` entry (`entry`), its settings (`config`) and its `results.<id>.details` (`details`). The file is byte-identical in both implementations (knapsack-server CI checks this). The output service validates every run file against these schemas before writing it ([adding an algorithm](../implementation/adding-an-algorithm.md#output-contract--kp_algo_id_output)).
 
 ## Encoding rules
 
@@ -23,7 +28,7 @@ Each algorithm describes its own two blocks (its `algorithms[]` entry and its `r
 | Field | Type | Meaning |
 |---|---|---|
 | `project` | string | `knapsack-benchmark-matlab` or `knapsack-benchmark-python` |
-| `schema_version` | int | `3` |
+| `schema_version` | int | `4` |
 | `algorithms` | object[] | algorithms actually run, in alphabetical order of their ids: [below](#algorithms) (version 1: string[] of ids) |
 | `skipped_algorithms` | object[] | `{id, reason}` of each algorithm that could not run in this environment (e.g. `ilp` without a solver); `[]` when all ran |
 | `instance_config` | object | settings of the instance generator: [below](#instance_config) (not in version 1) |
@@ -34,6 +39,8 @@ Each algorithm describes its own two blocks (its `algorithms[]` entry and its `r
 | `parameters` | object | the full resolved [parameters](parameters.md) |
 | `summary` | object | [below](#summary) |
 | `instances` | object[] | [below](#instances) |
+| `server` | object | optional: present in server runs only, [below](#server) |
+| `instance_set` | object | optional: [below](#instance_set) |
 
 ### `algorithms`
 
@@ -74,7 +81,7 @@ The inputs of the [instance generator](instances.md#generation-procedure), so th
 | Field | Type | Meaning |
 |---|---|---|
 | `num_instances` | int | |
-| `total_time_seconds` | number | wall time of the run |
+| `total_time_seconds` | number | wall time of the execution (all algorithms on all instances; for a server run, all processes of the environment) |
 | `ranking_by_median_time` | string[] | ids, fastest first |
 | `algorithms.<id>` | object | per-algorithm statistics, fields in [metrics § Summary](metrics.md#summary-statistics) |
 
@@ -86,7 +93,7 @@ The inputs of the [instance generator](instances.md#generation-procedure), so th
 | `family` | string | `uncorrelated` · `weakly_correlated` · `strongly_correlated` |
 | `n` | int | number of items |
 | `capacity` | int | $C$ |
-| `weights`, `values` | int[] | $w$, $v$ |
+| `weights`, `values` | int[] | $w$, $v$; left out when `instance_set.file` is set |
 | `optimum` | number | $V^*$: value found by the reference algorithm |
 | `optimal_items` | int[] | items of the reference algorithm's packing |
 | `results.<id>` | object | one per algorithm, [below](#instancesresultsid) |
@@ -119,12 +126,56 @@ The inputs of the [instance generator](instances.md#generation-procedure), so th
 | `ising` | `penalty`, `variables`, `slack_bits`, `model_memory_bytes`, `energy`, `proposals`, `accepted`, `raw_items`, `raw_value`, `raw_weight`, `feasible_before_repair`, `repaired`, `build_time_s`, `solve_time_s`, `decode_time_s` | [ising](algorithms/ising.md#6-reported-values) |
 | `fptas` | `epsilon`, `scale`, `scaled_profit_total`, `table_cells` | [fptas](algorithms/fptas.md#5-reported-values) |
 
+### `server`
+
+Written by knapsack-server for a run it executed:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `run_id` | string | ULID of the run |
+| `request` | object | the [run request](#run-request) after defaults |
+| `code` | object | `benchmark_sha` (commit of the benchmark, may be `null`), `server_version`, `image_digest` (may be `null`) |
+| `vm` | object or null | `type`, `market` (`spot` · `on-demand`), `vcpus`, `region`; `null` for a local container |
+| `processes` | int | benchmark processes run in parallel; the instances are dealt round robin, instance $k$ to process $(k-1) \bmod P$ |
+| `phases_s` | object | seconds per phase: `queued`, `instances`, `boot`, `execution`, `output` (`null` while running; `output` is still running when the file is written) |
+
+### `instance_set`
+
+| Field | Type | Meaning |
+|---|---|---|
+| `hash` | string | SHA-256 of the canonical JSON `{seed, instance_config}`, the same for every run with the same instance settings |
+| `file` | string | optional: name of the [instance set file](#instance-set-file) next to the run file (`instances.json.gz`). When it is set, `instances[]` leave out `weights` and `values`, and readers join them from that file. Uploaded and CLI files embed them and have no `file`. |
+
+## Raw results (`knapsack-raw` v1)
+
+The benchmarks write `raw.json` (one file per process in a server run). The fields are the run file's own fields, minus everything computed from the reference:
+
+`{format: "knapsack-raw", format_version: 1, project, created, environment, algorithms, algorithm_schemas: {<id>: <content of kp_algo_<id>_output.schema.json>}, skipped_algorithms, reference_algorithm, parameters, instance_config, instances: [{id, results: {<id>: result}}], timing: {total_time_seconds}}`
+
+A result is [`instances[].results.<id>`](#instancesresultsid) without `is_optimal`, `gap_percent` and `cost_ratio_vs_reference`. The output service computes those, `optimum`, `optimal_items` and the [`summary`](#summary) ([metrics](metrics.md)).
+
+## Instance set file
+
+`instances.json` of a run, and the input of the benchmarks' `--instances` option: `{format: "knapsack-instances", format_version: 1, hash (optional), instance_config, instances: [{id, family, n, capacity, weights, values}]}`. The ids are global: a process that gets part of the set still seeds instance $k$ with `seed + 1000 k` ([instances](instances.md)).
+
+## Run request
+
+The input of a server run (`POST /api/v1/runs`) and of the benchmarks' `--request` option. Every field is optional; absent fields come from the [settings files](parameters.md).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `environments` | string[] | `matlab`, `python` (default both; the benchmarks ignore it) |
+| `seed` | int | master seed (default 2026) |
+| `instances` | object | part of the [`instances` block](parameters.md#instances): `count` (≤ 100 on the server), `min_items`, `max_items`, `max_coefficient`, `capacity_ratio` |
+| `algorithms` | string[] | ids to run; the reference `dp` is always added (default: all) |
+| `algorithm_config` | object | `{<id>: partial settings}`, merged into the defaults and checked against that algorithm's `config` schema; an unknown key is an error (server: `repeats` ≤ 5) |
+
 ## Abridged example
 
 ```json
 {
   "project": "knapsack-benchmark-python",
-  "schema_version": 3,
+  "schema_version": 4,
   "algorithms": [
     { "id": "bnb", "label": "Branch and Bound (Dantzig Bound, Depth-First)",
       "description": "Exact depth-first search over take/skip decisions, ...", "short_label": "BnB",

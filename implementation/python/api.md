@@ -14,8 +14,10 @@ Signatures and return values. Behaviour is specified in [functional/](../../func
 
 | Function | Description |
 |---|---|
-| `run_benchmark() -> dict` | Full [run](../../functional/README.md#benchmark-run-in-one-paragraph) of every discovered algorithm on every instance; no parameter; writes to `<project>/output`. Raises `DiscoveryError` / `SchemaError` (see [README](README.md#run)). Returns the result dict + `output_file` |
-| `SCHEMA_VERSION` | `3` |
+| `run_benchmark(request=None, instances_file=None, out_dir=None) -> dict` | Full [run](../../functional/README.md#benchmark-run-in-one-paragraph). Optional inputs: a [run request](../../functional/output-format.md#run-request) dict, an [instance set](../../functional/output-format.md#instance-set-file) used instead of the generator, and the output folder (default `output/run-dd-mm-yy-hh-mm/`). Writes [`raw.json`](../../functional/output-format.md#raw-results-knapsack-raw-v1) and, without an instance set, `instances.json`; returns the raw dict. Raises `DiscoveryError` (see [README](README.md#run)) |
+| `describe() -> dict` | algorithms, default settings and JSON Schemas (`--describe`, the knapsack-server catalog) |
+
+Command line (`cli.main`): `knapsack-benchmark [--request req.json] [--instances inst.json] [--out DIR] [--describe]`.
 
 ## Runner helpers (`helpers/`, one module per MATLAB `kb_*.m` helper)
 
@@ -23,13 +25,11 @@ Signatures and return values. Behaviour is specified in [functional/](../../func
 |---|---|
 | `discover.discover_algorithms() -> (algos, skipped)` | scans `algorithms/`; `algos`: list of dicts (alphabetical) with `id`, `label`, `short_label`, `exact`, `reference`, `environment` (dict), `output` (the `kp_algo_<id>_output` module); `skipped`: `[{id, reason}]`. Raises `DiscoveryError` |
 | `discover.algorithm_ids() -> list[str]`, `discover.contract_module(id, part)` | every folder id (alphabetical, available or not); the module `algorithms/<id>/kp_algo_<id>_<part>.py` |
-| `run_algorithm.run_algorithm(algo, v, w, C, cfg, k) -> dict` | Runs one discovered algorithm with its repeats (`algo["output"].run`), validates `details`, builds the [result object](../../functional/output-format.md#instancesresultsid); `is_optimal` / `gap_percent` are filled by `run_benchmark` once the reference value is known |
-| `add_ratios.add_ratios(results, ref) -> None` | Adds `cost_ratio_vs_reference` in place ([spec](../../functional/metrics.md#ratios-to-the-reference)) |
-| `schema.validate(x, schema, where="$") -> None` | Raises `schema.SchemaError` when `x` does not match the JSON Schema subset `schema` |
+| `run_algorithm.run_algorithm(algo, v, w, C, cfg, k) -> dict` | Runs one discovered algorithm with its repeats (`algo["output"].run`) on instance `k` (global id, seed `seed + 1000 k`) and builds the raw [result object](../../functional/output-format.md#raw-results-knapsack-raw-v1). knapsack-server's output service computes `is_optimal`, `gap_percent` and the ratios |
 | `phase_timer.phase_timer() -> (mark, times)` | phase timer for `kp_algo_<id>_main`: each `mark(name)` stores in `times[name]` the seconds since the previous mark |
-| `summary.summarize(runs, algos, total_time) -> dict` | [Summary statistics](../../functional/metrics.md#summary-statistics) |
 | `write_json.write_json(path, data) -> None` | JSON writer (see [README](README.md#json-writing)) |
-| `printing.print_instance(r, algos, log=print)`, `printing.print_summary(s, algos, total_time, out_file, log=print)`, `printing.human_bytes(b)` | console output |
+| `printing.print_instance(inst, results, algos, ref, log=print)`, `printing.print_progress(instance, algorithm, event, log=print)` | console output, including the progress lines `@@progress {...}` |
+| `config.benchmark_config(request=None) -> dict`, `config.merge_settings(base, override, where)` | the [parameters](../../functional/parameters.md) with the request merged in; an unknown key raises |
 
 ## Algorithm packages (`algorithms/<id>/`)
 
@@ -42,7 +42,7 @@ Contract and skeletons: [adding an algorithm](../adding-an-algorithm.md). For ev
 | `kp_algo_<id>_config.kp_algo_<id>_config() -> dict` | the block `cfg["<id>"]` ([parameters](../../functional/parameters.md#algorithm-settings)), always with `repeats` |
 | `kp_algo_<id>_output.run(v, w, C, acfg, seed) -> dict` | common result: `label`, `exact`, `proven_optimal`, `items`, `working_memory_bytes`, `operations`, `operations_unit`, `details` |
 | `kp_algo_<id>_output.entry(acfg, env) -> dict` | `algorithms[]` entry |
-| `kp_algo_<id>_output.SCHEMA` | `{"entry": …, "details": …}` JSON Schemas |
+| `kp_algo_<id>_output.schema.json` | JSON Schema file (`entry`, `config`, `details`), byte-identical to the MATLAB file |
 
 ## `config`
 
@@ -114,4 +114,4 @@ Module `instances.instances` (generator) and `instances.config_instances` (setti
 
 ## `cli`
 
-`main(argv=None) -> int` — [command line](README.md#run): no options; returns 0, or 2 when any argument is given (0 for `-h` / `--help`).
+`main(argv=None) -> int` — [command line](README.md#run): `--request`, `--instances`, `--out`, `--describe`; returns 0, or 2 on a usage error.

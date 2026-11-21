@@ -34,7 +34,7 @@ $v = (5, 2, 8, 4, 3)$, $w = (9, 8, 4, 5, 2)$, $C = 17$, $P = 1$.
 | C2 | `bnb` proves the `dp` optimum on all 100 instances; total nodes 489 151; max 284 157, reached on instance 96 |
 | C3 | `dp`, `bnb`, `qubo`, `qubo_chz`: identical values, items, node counts, tabu iteration counts and energies across implementations |
 | C4 | `ilp`: identical **values**; item sets may differ when several optima exist (seen on 30 of 100 instances between HiGHS and GLPK) |
-| C5 | `schema_version` = 3; algorithms in alphabetical order; reference `dp`; every `algorithms[]` entry and every `details` block valid against its algorithm's JSON Schema |
+| C5 | Run file built by knapsack-server's output service: `schema_version` = 4; algorithms in alphabetical order; reference `dp`; every `algorithms[]` entry and every `details` block valid against its algorithm's JSON Schema |
 
 ## Expected benchmark results
 

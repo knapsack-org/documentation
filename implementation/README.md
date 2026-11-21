@@ -13,13 +13,13 @@ Each algorithm is a self-contained folder `algorithms/<id>/` with four files, th
 
 ## Traceability matrix
 
-Both projects use the same layout: helpers in `helpers/`, each algorithm in `algorithms/<id>/` (MATLAB under `src/`, Python under `src/knapsack_benchmark/`). Python names below are module-relative: `instances` is in `instances/`; `rng`, `measure`, `discover`, `schema`, `phase_timer`, `run_algorithm`, `add_ratios`, `summary`, `write_json` are in `helpers/`; `kp_algo_dp_main` is `algorithms/dp/kp_algo_dp_main.py`, and likewise for every algorithm; `qubo.*` is `algorithms/qubo/modules/qubo.py`.
+Both projects use the same layout: helpers in `helpers/`, each algorithm in `algorithms/<id>/` (MATLAB under `src/`, Python under `src/knapsack_benchmark/`). Python names below are module-relative: `instances` is in `instances/`; `rng`, `measure`, `discover`, `phase_timer`, `run_algorithm`, `printing`, `write_json` are in `helpers/`; `kp_algo_dp_main` is `algorithms/dp/kp_algo_dp_main.py`, and likewise for every algorithm; `qubo.*` is `algorithms/qubo/modules/qubo.py`.
 
 | Functional element | Python (`src/knapsack_benchmark/`) | MATLAB / Octave |
 |---|---|---|
 | [Runner](../functional/README.md#benchmark-run-in-one-paragraph) | `benchmark.run_benchmark`, CLI `cli.main` | `run_benchmark.m` |
 | [Algorithm discovery](../functional/parameters.md#algorithms) | `discover.discover_algorithms`, loaders `kp_algo_<id>_loader` | `kb_discover_algorithms`, loaders `kp_algo_<id>_loader` |
-| [Output schemas](../functional/output-format.md) | `schema.validate`, `SCHEMA` of each `kp_algo_<id>_output` | `kb_validate_schema`, `O.schema` of each `kp_algo_<id>_output` |
+| [Output schemas](../functional/output-format.md) | `algorithms/<id>/kp_algo_<id>_output.schema.json` (byte-identical in both; checked by knapsack-server's output service) | same file |
 | [Parameters](../functional/parameters.md) | `config.benchmark_config`, `algorithms/<id>/kp_algo_<id>_config.py` | `benchmark_config.m`, `algorithms/<id>/kp_algo_<id>_config.m` |
 | [Portable generator](../functional/instances.md#portable-random-generator) | `rng.seed_state`, `rng.lcg`, `rng.randi`, `rng.mround` | `kb_seed`, `kb_lcg`, `kb_randi`, built-in `round` |
 | [Instance families](../functional/instances.md#generation-procedure) | `instances/instances.generate_instances`, `instances/config_instances.config_instances` | `src/instances/`: `kb_generate_instances`, `kb_config_instances` |
@@ -41,9 +41,10 @@ Both projects use the same layout: helpers in `helpers/`, each algorithm in `alg
 | [`fptas`](../functional/algorithms/fptas.md) | `algorithms/fptas/kp_algo_fptas_main.py` | `kp_algo_fptas_main` |
 | [Quality metrics](../functional/metrics.md#quality) | `run_algorithm.run_algorithm` | `kb_run_algorithm` |
 | [Cost metrics](../functional/metrics.md#execution-cost) | `measure.measure`, `measure.process_memory` | `kb_run_algorithm`, `kb_process_memory`, `kb_bytes`, `whos` |
-| [Ratios to the reference](../functional/metrics.md#ratios-to-the-reference) | `add_ratios.add_ratios` | `kb_add_ratios` |
-| [Summary](../functional/metrics.md#summary-statistics) | `summary.summarize` | `kb_summary` |
-| [Output file](../functional/output-format.md) | `write_json.write_json` | `kb_write_json` |
+| [Ratios to the reference](../functional/metrics.md#ratios-to-the-reference), [summary](../functional/metrics.md#summary-statistics), `is_optimal`, `gap_percent` | none: knapsack-server `libs/output`, once for both | none |
+| [Raw results](../functional/output-format.md#raw-results-knapsack-raw-v1) | `benchmark.run_benchmark`, `write_json.write_json` | `run_benchmark`, `kb_write_json` |
+| [Run request](../functional/output-format.md#run-request), [instance set](../functional/output-format.md#instance-set-file) | `cli.main`, `config.benchmark_config` | `run_benchmark`, `benchmark_config`, `kb_merge_settings` |
+| [Run file](../functional/output-format.md) (`schema_version` 4) | knapsack-server `knapsack-output` | knapsack-server `knapsack-output` |
 | [Acceptance tests](../functional/acceptance-tests.md) | `tests/test_p01.py`, `tests/test_parity.py` | `tests/test_p01.m` |
 
 ## Differences between the implementations
@@ -78,4 +79,4 @@ Measured cost on the default run (orders of magnitude only; different machines):
 | `qubo`, `qubo_chz` | 0.30 s | 0.81–0.86 s | 15 kB |
 | whole run | 68 s | 214 s | |
 
-Reference runs of 2026-11-18 (`schema_version` 3, the Knapview fixtures): Octave 11.3 `run-18-11-26-19-30.json`, Python 3.14.5 `run-18-11-26-19-32.json`, Windows test machine, five core algorithms.
+Since `schema_version` 4 (2026-11-20), knapsack-server's tests rebuild these runs' run files from their raw part and match every computed field (parity (b)); the Knapview fixtures are those rebuilt v4 files. Reference runs of 2026-11-18 (`schema_version` 3): Octave 11.3 `run-18-11-26-19-30.json`, Python 3.14.5 `run-18-11-26-19-32.json`, Windows test machine, five core algorithms.

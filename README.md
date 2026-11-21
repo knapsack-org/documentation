@@ -23,10 +23,10 @@ Rule: a behaviour is specified **once**, in `functional/`. Implementation pages 
 **Functional specification**
 1. [Problem and conventions](functional/problem.md) — 0-1 knapsack, notation, indexing, units
 2. [Instance families](functional/instances.md) — random generator, Pisinger families, sizes, capacity
-3. Algorithms — [`dp`](functional/algorithms/dp.md) · [`bnb`](functional/algorithms/bnb.md) · [`ilp`](functional/algorithms/ilp.md) · [`qubo`](functional/algorithms/qubo.md) · [`qubo_chz`](functional/algorithms/qubo_chz.md)
+3. Algorithms — [`dp`](functional/algorithms/dp.md) · [`bnb`](functional/algorithms/bnb.md) · [`fptas`](functional/algorithms/fptas.md) · [`ga`](functional/algorithms/ga.md) · [`greedy`](functional/algorithms/greedy.md) · [`ilp`](functional/algorithms/ilp.md) · [`ising`](functional/algorithms/ising.md) · [`qubo`](functional/algorithms/qubo.md) · [`qubo_chz`](functional/algorithms/qubo_chz.md) · [`sa`](functional/algorithms/sa.md)
 4. [Parameters](functional/parameters.md) — every setting, default and effect
 5. [Quality and cost metrics](functional/metrics.md) — gap, optimality, time, memory, operations, summary statistics
-6. [Output format](functional/output-format.md) — JSON `schema_version` 3
+6. [Output format](functional/output-format.md) — JSON `schema_version` 4, raw results, instance set, run request
 7. [Acceptance tests](functional/acceptance-tests.md) — P01, the MathWorks QUBO example, expected benchmark results
 
 **Implementation specification**
@@ -40,5 +40,5 @@ Rule: a behaviour is specified **once**, in `functional/`. Implementation pages 
 ## Conventions
 
 - Plain GitHub Markdown; formulas in LaTeX (`$…$`, `$$…$$`), rendered by GitHub and Obsidian.
-- Scope: what is **implemented today** (benchmark projects as of 2026-11-18: self-contained algorithm folders found by scanning, no run options, JSON `schema_version` 3). Planned work (the `knapsack-python` / `knapsack-matlab` libraries, other variants) is out of scope.
+- Scope: what is **implemented today** (benchmark projects as of 2026-11-21: self-contained algorithm folders found by scanning; optional run request and instance set inputs; raw results, from which [knapsack-server](https://github.com/knapsack-org/knapsack-server) builds the `schema_version` 4 run file). Planned work (the `knapsack-python` / `knapsack-matlab` libraries, other variants) is out of scope.
 - Source of truth for this content: the code of both benchmark projects. Background notes (theory, library surveys, EN/FR) live in the project's Obsidian vault.

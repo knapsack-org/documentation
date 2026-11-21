@@ -2,7 +2,7 @@
 
 Every run is fully defined by these parameters (plus the code version). Both implementations use the **same keys and defaults**; a run writes the complete resolved set to `parameters` in the [output](output-format.md).
 
-There are **no run-time overrides**: the benchmark command takes no argument and always runs every algorithm on every instance. To change a value, edit the file that defines it: `seed` in the benchmark configuration, `instances.*` in the instance generator's settings, `<id>.*` in the algorithm's own `kp_algo_<id>_config` (file names per implementation in [MATLAB](../implementation/matlab/README.md#run) and [Python](../implementation/python/README.md#run)).
+Without a [run request](output-format.md#run-request) the benchmark runs every algorithm on every generated instance with the values of the settings files. A request (`--request` / the first argument of `run_benchmark`, or a knapsack-server run) changes `seed`, `instances.*`, the selection of algorithms and `<id>.*` for one run; absent fields keep the file values. To change a default, edit the file that defines it: `seed` in the benchmark configuration, `instances.*` in the instance generator's settings, `<id>.*` in the algorithm's own `kp_algo_<id>_config` (file names per implementation in [MATLAB](../implementation/matlab/README.md#run) and [Python](../implementation/python/README.md#run)).
 
 ## Instances
 
@@ -127,7 +127,7 @@ Own copy of the QUBO settings, so `qubo_chz` can be tuned without touching `qubo
 
 ## Keys renamed in `schema_version` 2
 
-`schema_version` 3 renamed no parameter; it removed the overrides and the selection of algorithms.
+`schema_version` 3 renamed no parameter; it removed the overrides and the selection of algorithms. `schema_version` 4 renamed none either; it brought back per-run values through the [run request](output-format.md#run-request).
 
 | Version 1 | Version 2 |
 |---|---|

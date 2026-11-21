@@ -18,12 +18,12 @@ Language-independent description of the benchmark. Both implementations must pro
 | [algorithms/fptas.md](algorithms/fptas.md) | Profit-scaling FPTAS, $(1-\varepsilon)$-approximation |
 | [parameters.md](parameters.md) | All parameters, defaults and effects |
 | [metrics.md](metrics.md) | Quality and execution-cost measures, summary statistics |
-| [output-format.md](output-format.md) | JSON output contract (`schema_version` 3) |
+| [output-format.md](output-format.md) | JSON output contract (`schema_version` 4), raw results, instance set, run request |
 | [acceptance-tests.md](acceptance-tests.md) | Checks every implementation must pass |
 
 ## Benchmark run in one paragraph
 
-Find the algorithms (one folder each, alphabetical; those that cannot run in this environment are skipped) and generate `instances.count` instances ([instances](instances.md)). For each instance $k$: run the reference algorithm `dp` first (its value is the optimum $V^*$), then every other algorithm; each runs `repeats` times, keeps its last result, and is measured on quality and cost ([metrics](metrics.md)). There are no options: every run uses every algorithm on every instance ([parameters](parameters.md)). Then aggregate per algorithm and per family, and write one JSON file ([output format](output-format.md)).
+Find the algorithms (one folder each, alphabetical; those that cannot run in this environment are skipped) and generate `instances.count` instances ([instances](instances.md)). For each instance $k$: run the reference algorithm `dp` first (its value is the optimum $V^*$), then every other algorithm; each runs `repeats` times, keeps its last result, and is measured on quality and cost ([metrics](metrics.md)). Without a [run request](output-format.md#run-request) every run uses every algorithm on every instance ([parameters](parameters.md)). The benchmark writes the raw results; knapsack-server's output service then computes the gaps and ratios, aggregates per algorithm and per family, and writes one JSON file ([output format](output-format.md)).
 
 ## Algorithm summary
 

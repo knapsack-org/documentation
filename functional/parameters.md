@@ -46,6 +46,7 @@ Each algorithm has its own settings block, keyed by its id, defined in the algor
 
 | Key | Default | Meaning |
 |---|---|---|
+| `ilp.time_limit_s` | `10` | seconds one solve may take (0 < t ≤ 300); when reached the solve stops, not proven optimal ([ilp](algorithms/ilp.md)) |
 | `ilp.repeats` | `3` | |
 
 ### `qubo`

@@ -4,7 +4,7 @@
 |---|---|
 | Type | exact; optimality as reported by the solver |
 | Method | generic mixed-integer linear programming (MILP) solver: LP-based branch and bound with cuts and heuristics |
-| Parameters | none of its own (`ilp.repeats` only, see [parameters](../parameters.md#ilp)) |
+| Parameters | `ilp.time_limit_s` (time limit of one solve) and `ilp.repeats`, see [parameters](../parameters.md#ilp) |
 | Solver | chosen by the implementation — see [Python](../../implementation/python/README.md#ilp-solver) and [MATLAB](../../implementation/matlab/README.md#ilp-solver) |
 
 ## Model
@@ -18,6 +18,8 @@ $$
 
 (Minimising $-v^\top x$ is the solver form of maximising $v^\top x$.) The required relative optimality gap is **0**: the solver must prove optimality, not stop within a tolerance.
 
+One solve stops after `ilp.time_limit_s` seconds (default 10). Large strongly correlated instances can take GLPK far longer (about 20 minutes for a 72-item instance with capacity ratio 0.7), which would block a server run. A stopped solve returns the best packing found and `proven_optimal` is `false`. GLPK through Octave returns no point when it stops this way, so the packing is then empty.
+
 ## Solution extraction
 
 The solver returns real numbers; item $i$ is taken when $\operatorname{round}(x_i) = 1$ (i.e. $x_i > 0.5$). If the solver returns no point, the packing is empty.
@@ -29,7 +31,7 @@ The solver returns real numbers; item $i$ is taken when $\operatorname{round}(x_
 | `proven_optimal` | `true` only when the solver status means "optimal solution found" |
 | `operations` | the solver's branch-and-bound node count, or `null` when the solver does not expose it |
 | `details.solver` | solver name |
-| `details.status` | the solver's raw status code (meaning is solver-specific) |
+| `details.status` | the solver's raw status code (meaning is solver-specific; time limit reached: HiGHS `1`, Octave `glpk` `-1`, `intlinprog` exit flag `2` or `0`) |
 | `details.mip_gap` | final relative MIP gap, when the solver exposes it (0 when proven) |
 | `working_memory_bytes` | the problem data only ($v$, $w$, $x$); the solver's internal memory is not visible |
 

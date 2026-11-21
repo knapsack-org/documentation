@@ -136,7 +136,7 @@ Written by knapsack-server for a run it executed:
 | `request` | object | the [run request](#run-request) after defaults |
 | `code` | object | `benchmark_sha` (commit of the benchmark, may be `null`), `server_version`, `image_digest` (may be `null`) |
 | `vm` | object or null | `type`, `market` (`spot` · `on-demand`), `vcpus`, `region`; `null` for a local container |
-| `processes` | int | benchmark processes run in parallel; the instances are dealt round robin, instance $k$ to process $(k-1) \bmod P$ |
+| `processes` | int | benchmark processes run in parallel; the instances are cut into consecutive chunks (about 4 per process) that the processes take in turn. Each chunk is saved when it ends, so a worker restarted after a Spot interruption runs only the instances not saved yet |
 | `phases_s` | object | seconds per phase: `queued`, `instances`, `boot`, `execution`, `output` (`null` while running; `output` is still running when the file is written) |
 
 ### `instance_set`

@@ -18,7 +18,7 @@ $$
 
 (Minimising $-v^\top x$ is the solver form of maximising $v^\top x$.) The required relative optimality gap is **0**: the solver must prove optimality, not stop within a tolerance.
 
-One solve stops after `ilp.time_limit_s` seconds (default 10). Large strongly correlated instances can take GLPK far longer (about 20 minutes for a 72-item instance with capacity ratio 0.7), which would block a server run. A stopped solve returns the best packing found and `proven_optimal` is `false`. GLPK through Octave returns no point when it stops this way, so the packing is then empty.
+One solve stops after `ilp.time_limit_s` seconds (default 60). Large strongly correlated instances can take GLPK far longer (about 20 minutes for a 72-item instance with capacity ratio 0.7), which would block a server run. A stopped solve returns the best packing found and `proven_optimal` is `false`. GLPK through Octave returns no point when it stops this way, so the packing is then empty.
 
 ## Solution extraction
 

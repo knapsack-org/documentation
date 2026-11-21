@@ -26,7 +26,7 @@ Called by `run_benchmark`; each is its own file, so it can be called and tested 
 
 ## Algorithm folders (`src/algorithms/<id>/`)
 
-Contract and skeletons: [adding an algorithm](../adding-an-algorithm.md). For every `<id>` (`bnb`, `dp`, `ilp`, `qubo`, `qubo_chz`, …):
+Contract and skeletons: [adding an algorithm](../adding-an-algorithm.md). For every `<id>` (`bnb`, `dp`, `ilp`, `qubo`, …):
 
 | Function | Description |
 |---|---|
@@ -73,10 +73,6 @@ In `src/instances/`:
 `opts` = the `tabu` parameter group plus `seed` (set by the runner to `seed + 1000*k`). `stats`: `iterations`, `restarts`, `tenure`, `move_evaluations`, `working_memory_bytes`.
 
 The QUBO functions are in `src/algorithms/qubo/modules/`. Penalty rule (`kb_penalty(values, rule)`, same folder): a char `rule` → `max(values) + 1`, else `rule`.
-
-## `qubo_chz` — [spec](../../functional/algorithms/qubo_chz.md)
-
-`kp_algo_qubo_chz_main` and, in `src/algorithms/qubo_chz/modules/`, `kb_chz_penalty`, `kb_chz_knapsack2qubo`, `kb_chz_encode_slack`, `kb_chz_qubo_tabu_slack`, `kb_chz_qubo_tabu`, `kb_chz_decode`: same signatures as the functions above, separate copies of the code. It uses the `qubo_chz` parameter group and seed `seed + 1000*k + seed_offset`.
 
 ## Infrastructure
 

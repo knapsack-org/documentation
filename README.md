@@ -23,7 +23,7 @@ Rule: a behaviour is specified **once**, in `functional/`. Implementation pages 
 **Functional specification**
 1. [Problem and conventions](functional/problem.md) — 0-1 knapsack, notation, indexing, units
 2. [Instance families](functional/instances.md) — random generator, Pisinger families, sizes, capacity
-3. Algorithms — [`dp`](functional/algorithms/dp.md) · [`bnb`](functional/algorithms/bnb.md) · [`fptas`](functional/algorithms/fptas.md) · [`ga`](functional/algorithms/ga.md) · [`greedy`](functional/algorithms/greedy.md) · [`ilp`](functional/algorithms/ilp.md) · [`ising`](functional/algorithms/ising.md) · [`qubo`](functional/algorithms/qubo.md) · [`qubo_chz`](functional/algorithms/qubo_chz.md) · [`sa`](functional/algorithms/sa.md)
+3. Algorithms — [`dp`](functional/algorithms/dp.md) · [`bnb`](functional/algorithms/bnb.md) · [`fptas`](functional/algorithms/fptas.md) · [`ga`](functional/algorithms/ga.md) · [`greedy`](functional/algorithms/greedy.md) · [`ilp`](functional/algorithms/ilp.md) · [`ising`](functional/algorithms/ising.md) · [`qubo`](functional/algorithms/qubo.md) · [`sa`](functional/algorithms/sa.md)
 4. [Parameters](functional/parameters.md) — every setting, default and effect
 5. [Quality and cost metrics](functional/metrics.md) — gap, optimality, time, memory, operations, summary statistics
 6. [Output format](functional/output-format.md) — JSON `schema_version` 4, raw results, instance set, run request

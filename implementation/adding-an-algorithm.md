@@ -24,8 +24,8 @@ Adding an algorithm adds an `algorithms[]` entry, a `parameters.<id>` block and 
 ## Folder rules
 
 - The four `kp_algo_<id>_*` files are required; discovery stops with an error when one is missing or when the loader's `id` differs from the folder name.
-- Algorithm code may call the generic helpers (`kb_bytes`, `kb_lcg`, `kb_randi`, `kb_seed` in MATLAB; `helpers.rng`, `helpers.phase_timer` in Python) but **never another algorithm's folder**. Code shared with another algorithm is copied into this folder's `modules/` (e.g. `qubo/modules/kb_penalty.m` and `qubo_chz/modules/kb_chz_penalty.m`).
-- MATLAB only: every `.m` file name under `src/algorithms/` must be unique across folders, because all folders share one path (`genpath`) and a duplicate would silently shadow the other. Discovery stops with `kb_discover_algorithms:duplicateName`. Prefix module files with the id when in doubt (`kb_chz_*`).
+- Algorithm code may call the generic helpers (`kb_bytes`, `kb_lcg`, `kb_randi`, `kb_seed` in MATLAB; `helpers.rng`, `helpers.phase_timer` in Python) but **never another algorithm's folder**. Code shared with another algorithm is copied into this folder's `modules/`.
+- MATLAB only: every `.m` file name under `src/algorithms/` must be unique across folders, because all folders share one path (`genpath`) and a duplicate would silently shadow the other. Discovery stops with `kb_discover_algorithms:duplicateName`. Prefix module files with the id when in doubt (`kb_<id>_*`).
 - Only the four contract files use the `kp_` prefix; module files keep `kb_` (MATLAB) or any module name (Python).
 
 ## Loader contract — `kp_algo_<id>_loader`
@@ -268,4 +268,4 @@ def entry(acfg, env):
 | exact, no settings but `repeats`, reference | `dp` |
 | exact with a limit | `bnb` (`max_nodes`) |
 | external solver, `available()` and `environment()`, solver name in the label | `ilp` |
-| randomised, nested settings, uses `seed`, timed phases with `mark`, `modules/` | `qubo`; `qubo_chz` adds `seed_offset` and copies the modules |
+| randomised, nested settings, uses `seed`, timed phases with `mark`, `modules/` | `qubo` |

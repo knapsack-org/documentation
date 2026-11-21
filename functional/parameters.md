@@ -8,7 +8,7 @@ Without a [run request](output-format.md#run-request) the benchmark runs every a
 
 | Key | Default | Meaning | Used in |
 |---|---|---|---|
-| `seed` | `2026` | master seed: instances, and the tabu streams of `qubo` / `qubo_chz` | [instances](instances.md), [qubo](algorithms/qubo.md#2-solver--tabu-search-mode-slack-optimal-default) |
+| `seed` | `2026` | master seed: instances, and the tabu streams of `qubo` | [instances](instances.md), [qubo](algorithms/qubo.md#2-solver--tabu-search-mode-slack-optimal-default) |
 | `instances.count` | `100` | number of generated instances $N$ | [instances](instances.md) |
 | `instances.min_items` | `10` | size of the first instance | [instances](instances.md) |
 | `instances.max_items` | `48` | size of the last instance | [instances](instances.md) |
@@ -61,17 +61,6 @@ Each algorithm has its own settings block, keyed by its id, defined in the algor
 | `qubo.repeats` | `1` | deterministic and slow |
 
 $N$ = number of searched bits: $n$ in `slack-optimal` mode, $n + K$ in `all-bits` mode.
-
-### `qubo_chz`
-
-Own copy of the QUBO settings, so `qubo_chz` can be tuned without touching `qubo` ([qubo_chz](algorithms/qubo_chz.md)).
-
-| Key | Default | Meaning |
-|---|---|---|
-| `qubo_chz.penalty` | `"auto"` | as `qubo.penalty` |
-| `qubo_chz.seed_offset` | `0` | added to the tabu seed; `0` → same random starts as `qubo` |
-| `qubo_chz.tabu.*` | same as `qubo.tabu.*` | as `qubo.tabu.*` |
-| `qubo_chz.repeats` | `1` | |
 
 ### `greedy`
 

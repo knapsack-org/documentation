@@ -14,7 +14,7 @@ Let $S$ be the returned item set and $V^*$ the [`dp`](algorithms/dp.md) optimum 
 | `weight` | $\sum_{i \in S} w_i$ |
 | `feasible` | $\text{weight} \le C$ |
 | `is_optimal` | $\text{value} = V^*$ — *is* the answer optimal? |
-| `proven_optimal` | did the algorithm *prove* optimality? `dp`: always; `bnb`: tree exhausted; `ilp`: solver status; heuristics and approximation schemes (`qubo`, `qubo_chz`, `greedy`, `sa`, `ga`, `ising`, `fptas`): never |
+| `proven_optimal` | did the algorithm *prove* optimality? `dp`: always; `bnb`: tree exhausted; `ilp`: solver status; heuristics and approximation schemes (`qubo`, `greedy`, `sa`, `ga`, `ising`, `fptas`): never |
 | `gap_percent` | $100\,(V^* - \text{value}) / V^*$ if $V^* > 0$, else $0$ |
 
 `is_optimal` and `proven_optimal` are independent: a heuristic can be optimal without proving it.
@@ -32,7 +32,7 @@ Each algorithm is run `repeats` times in a row on the instance ([parameters](par
 | `working_memory_bytes` | bytes held by the algorithm's **own arrays** (inputs, tables, vectors, QUBO matrix). Measured the same way in every language so the values are comparable; not the solver's internal memory for `ilp` |
 | `process_memory_before_bytes`, `…_after_bytes`, `…_delta_bytes` | resident memory of the whole process before/after the runs; `null` when the platform cannot report it. Indicative only |
 | `operations` | algorithm-specific work count, `null` if unknown |
-| `operations_unit` | `table cells` (dp) · `nodes` (bnb, ilp) · `move evaluations` (qubo, qubo_chz, sa, ising) · `items scanned` (greedy) · `fitness evaluations` (ga) · `table cells` (dp, fptas) |
+| `operations_unit` | `table cells` (dp) · `nodes` (bnb, ilp) · `move evaluations` (qubo, sa, ising) · `items scanned` (greedy) · `fitness evaluations` (ga) · `table cells` (dp, fptas) |
 
 ### Ratios to the reference
 

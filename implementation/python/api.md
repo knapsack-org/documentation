@@ -33,7 +33,7 @@ Command line (`cli.main`): `knapsack-benchmark [--request req.json] [--instances
 
 ## Algorithm packages (`algorithms/<id>/`)
 
-Contract and skeletons: [adding an algorithm](../adding-an-algorithm.md). For every `<id>` (`bnb`, `dp`, `ilp`, `qubo`, `qubo_chz`, …):
+Contract and skeletons: [adding an algorithm](../adding-an-algorithm.md). For every `<id>` (`bnb`, `dp`, `ilp`, `qubo`, …):
 
 | Module · name | Description |
 |---|---|
@@ -100,10 +100,6 @@ Module `instances.instances` (generator) and `instances.config_instances` (setti
 | `TabuStats` | dataclass: `iterations`, `restarts`, `tenure`, `move_evaluations`, `array_bytes` (returned by `_main` as `working_memory_bytes`) |
 
 `opts` = the `tabu` parameter group plus `seed` (set by the runner to `seed + 1000·k`).
-
-## `qubo_chz` — [spec](../../functional/algorithms/qubo_chz.md)
-
-`kp_algo_qubo_chz_main` and `algorithms/qubo_chz/modules/qubo_chz.py`: same functions and signatures as `qubo`; a separate copy of the code. It uses the `qubo_chz` parameter group and seed `seed + 1000·k + seed_offset`.
 
 ## `measure` — [cost metrics](../../functional/metrics.md#execution-cost)
 

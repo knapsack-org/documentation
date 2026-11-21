@@ -34,7 +34,7 @@ knapsack-benchmark --describe        # algorithms, default settings and JSON Sch
 |---|---|
 | `seed`, `timing.trace_memory` | `config.py` |
 | `instances.*` | `instances/config_instances.py` |
-| `<id>.*` (e.g. `bnb.max_nodes`, `qubo.tabu.mode`, `qubo_chz.seed_offset`) | `algorithms/<id>/kp_algo_<id>_config.py` |
+| `<id>.*` (e.g. `bnb.max_nodes`, `qubo.tabu.mode`) | `algorithms/<id>/kp_algo_<id>_config.py` |
 
 From Python:
 
@@ -68,8 +68,7 @@ knapsack-benchmark-python/
 │   └── algorithms/     one self-contained package per algorithm
 │       ├── <id>/kp_algo_<id>_loader.py, _main.py, _config.py, _output.py, _output.schema.json (+ optional modules/)
 │       ├── bnb/ · dp/ · ilp/     the four files only
-│       ├── qubo/modules/qubo.py  QUBO model, slack encoding, both tabu searches, decode, penalty
-│       └── qubo_chz/modules/qubo_chz.py   independent copy of qubo.py
+│       └── qubo/modules/qubo.py  QUBO model, slack encoding, both tabu searches, decode, penalty
 ├── tests/test_p01.py, tests/test_parity.py
 └── output/             run-*/raw.json, instances.json (git-ignored)
 ```
@@ -121,8 +120,7 @@ pytest -m "not slow"     # without the full run
 | `test_p01.py::test_bnb_node_limit` | A3 |
 | `test_p01.py::test_mathworks_knapsack2qubo_example` | B1, B2 |
 | `test_p01.py::test_qubo_tabu_p01` | A5, A6 |
-| `test_p01.py::test_qubo_chz_matches_qubo` | A7 |
-| `test_p01.py::test_slack_encoding` (qubo, qubo_chz) | B3 |
+| `test_p01.py::test_slack_encoding` (qubo) | B3 |
 | `test_p01.py::test_instances_match_matlab` | C1 (first instance: n = 10, C = 285, optimum 345) |
 | `test_parity.py::test_bnb_nodes_and_optimum` | C2 |
 | `test_parity.py::test_full_run_matches_octave` (`slow`; writes `output/run-*.json` and deletes it) | C3 (QUBO values of all 100 instances), C4, C5 (version, order, reference), expected results |

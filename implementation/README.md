@@ -33,7 +33,6 @@ Both projects use the same layout: helpers in `helpers/`, each algorithm in `alg
 | [Tabu, slack-optimal](../functional/algorithms/qubo.md#2-solver--tabu-search-mode-slack-optimal-default) | `qubo.qubo_tabu_slack` | `modules/kb_qubo_tabu_slack` |
 | [Tabu, all-bits](../functional/algorithms/qubo.md#3-solver--tabu-search-mode-all-bits-comparison) | `qubo.qubo_tabu` | `modules/kb_qubo_tabu` |
 | [Decode / repair](../functional/algorithms/qubo.md#4-decoding-and-repair) | `qubo.decode` | `modules/kb_decode` |
-| [`qubo_chz`](../functional/algorithms/qubo_chz.md) | `kp_algo_qubo_chz_main`, `modules/qubo_chz.py` (same function names) | `kp_algo_qubo_chz_main`, `modules/kb_chz_*` (same names with the `chz_` prefix, own `kb_chz_penalty`) |
 | [`greedy`](../functional/algorithms/greedy.md) | `algorithms/greedy/kp_algo_greedy_main.py` | `kp_algo_greedy_main` |
 | [`sa`](../functional/algorithms/sa.md) | `algorithms/sa/kp_algo_sa_main.py` | `kp_algo_sa_main` |
 | [`ga`](../functional/algorithms/ga.md) | `algorithms/ga/kp_algo_ga_main.py` | `kp_algo_ga_main` |
@@ -76,7 +75,7 @@ Measured cost on the default run (orders of magnitude only; different machines):
 | `dp` | 0.56 ms | 3.9 ms | 171 kB |
 | `bnb` | 0.88 ms | 7.9 ms | ≈ 2 kB |
 | `ilp` | 18 ms (HiGHS) | 2.5 ms (GLPK) | 0.9 kB (problem data) |
-| `qubo`, `qubo_chz` | 0.30 s | 0.81–0.86 s | 15 kB |
+| `qubo` | 0.30 s | 0.81–0.86 s | 15 kB |
 | whole run | 68 s | 214 s | |
 
 Since `schema_version` 4 (2026-11-20), knapsack-server's tests rebuild these runs' run files from their raw part and match every computed field (parity (b)); the Knapview fixtures are those rebuilt v4 files. Reference runs of 2026-11-18 (`schema_version` 3): Octave 11.3 `run-18-11-26-19-30.json`, Python 3.14.5 `run-18-11-26-19-32.json`, Windows test machine, five core algorithms.

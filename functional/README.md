@@ -10,7 +10,6 @@ Language-independent description of the benchmark. Both implementations must pro
 | [algorithms/bnb.md](algorithms/bnb.md) | Depth-first branch and bound with the Dantzig bound — exact |
 | [algorithms/ilp.md](algorithms/ilp.md) | Integer linear program handed to a MILP solver — exact |
 | [algorithms/qubo.md](algorithms/qubo.md) | QUBO penalty model + multi-start tabu search — heuristic |
-| [algorithms/qubo_chz.md](algorithms/qubo_chz.md) | Independent copy of `qubo` for experiments — heuristic |
 | [algorithms/greedy.md](algorithms/greedy.md) | Ratio greedy + best single item — heuristic, ½-approximation |
 | [algorithms/sa.md](algorithms/sa.md) | Simulated annealing on the item bits — heuristic |
 | [algorithms/ga.md](algorithms/ga.md) | Genetic algorithm with greedy repair — heuristic |
@@ -33,7 +32,6 @@ Find the algorithms (one folder each, alphabetical; those that cannot run in thi
 | `bnb` | Depth-first B&B, Dantzig bound | yes, unless node limit hit | $O(2^n)$ worst case | $O(n)$ | nodes |
 | `ilp` | MILP solver | yes, by solver status | solver-dependent | solver-dependent | solver B&B nodes |
 | `qubo` | QUBO + tabu search | no | $O(\text{restarts}\cdot\text{iterations}\cdot n)$ | $O((n+K)^2)$ | move evaluations |
-| `qubo_chz` | copy of `qubo` | no | same as `qubo` | same | move evaluations |
 | `greedy` | ratio greedy + best single item | no (½-approximation) | $O(n \log n)$ | $O(n)$ | items scanned |
 | `sa` | simulated annealing on item bits | no | $O(\text{restarts}\cdot\text{steps})$ | $O(n)$ | move evaluations |
 | `ga` | genetic algorithm, greedy repair | no | $O(\text{generations}\cdot\text{pop}\cdot n)$ | $O(\text{pop}\cdot n)$ | fitness evaluations |

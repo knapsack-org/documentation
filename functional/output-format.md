@@ -64,6 +64,7 @@ The inputs of the [instance generator](instances.md#generation-procedure), so th
 |---|---|---|
 | `seed` | int | master seed (same as `parameters.seed`) |
 | `count`, `min_items`, `max_items`, `max_coefficient`, `capacity_ratio` | number | the `instances` block of the [parameters](parameters.md#instances) (same as `parameters.instances`) |
+| `correlation` | object | `families` (string[]), `weak_noise_ratio`, `strong_offset_ratio` ([parameters](parameters.md#instances)); written since 2026-11-26, optional in `schema_version` 4: a file without it was generated with the defaults |
 
 ### `environment`
 
@@ -119,7 +120,7 @@ The inputs of the [instance generator](instances.md#generation-procedure), so th
 | `dp` | `table_cells` | [dp](algorithms/dp.md#reported-values) |
 | `bnb` | `nodes`, `node_limit`, `node_limit_reached` | [bnb](algorithms/bnb.md#5-output) |
 | `ilp` | `solver`, `status`, optional `mip_gap` | [ilp](algorithms/ilp.md#reported-values) |
-| `qubo` | `penalty`, `variables`, `slack_bits`, `model_memory_bytes`, `energy`, `iterations`, `raw_items`, `raw_value`, `raw_weight`, `feasible_before_repair`, `repaired`, `build_time_s`, `solve_time_s`, `decode_time_s` | [qubo](algorithms/qubo.md#5-reported-values) |
+| `qubo`, `qubo_b`, `qc` | `penalty`, `variables`, `slack_bits`, `model_memory_bytes`, `energy`, `iterations`, `raw_items`, `raw_value`, `raw_weight`, `feasible_before_repair`, `repaired`, `build_time_s`, `solve_time_s`, `decode_time_s` | [qubo](algorithms/qubo.md#5-reported-values) |
 | `greedy` | `greedy_value`, `single_value`, `chose_single` | [greedy](algorithms/greedy.md#5-reported-values) |
 | `sa` | `penalty`, `proposals`, `accepted`, `t_start`, `t_end` | [sa](algorithms/sa.md#5-reported-values) |
 | `ga` | `evaluations`, `generations` | [ga](algorithms/ga.md#5-reported-values) |

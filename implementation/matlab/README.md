@@ -9,7 +9,7 @@ The original implementation, written in code that runs unchanged in **GNU Octave
 | GNU Octave | ≥ 7 | needs `jsonencode`; `glpk` is built in. Tested with Octave 11.3 on Windows |
 | MATLAB | ≥ R2021a | `jsonencode` with pretty printing. `ilp` needs the Optimization Toolbox (`intlinprog`) or a `glpk` function on the path, otherwise it is skipped with a warning. **Not yet run in MATLAB** — only Octave runs exist |
 
-No toolbox is needed for `dp`, `bnb`, `qubo`. MATLAB's own `knapsack2qubo` / `qubo.solve` (Quantum Computing support package) are **not** used: they do not exist in Octave; `qubo/modules/kb_knapsack2qubo` rebuilds the same model.
+No toolbox is needed for `dp`, `bnb`, `qubo`. MATLAB's own `knapsack2qubo` / `qubo.solve` (Quantum Computing support package) are **not** used yet: they do not exist in Octave; `qubo/modules/kb_knapsack2qubo` rebuilds the same model. `qubo_b` will host them later ([below](#qubo-variant-b-and-mathworks-knapsack2qubo)).
 
 ## Get the code
 
@@ -63,12 +63,25 @@ knapsack-benchmark-matlab/
 │       ├── <id>/kp_algo_<id>_loader.m, _main.m, _config.m, _output.m, _output.schema.json (+ optional modules/)
 │       ├── dp/ · bnb/      the four files only
 │       ├── ilp/modules/    kb_ilp_solver_name.m (used by the loader's availability check)
-│       └── qubo/modules/   kb_penalty.m, kb_knapsack2qubo.m, kb_encode_slack.m, kb_qubo_tabu_slack.m, kb_qubo_tabu.m, kb_decode.m
+│       ├── qubo/modules/   kb_penalty.m, kb_knapsack2qubo.m, kb_encode_slack.m, kb_qubo_tabu_slack.m, kb_qubo_tabu.m, kb_decode.m
+│       ├── qubo_b/modules/ the same six files, prefixed kb_qubo_b_ (.m names are unique across folders)
+│       └── qc/modules/     the same six prefixed kb_qc_, plus kb_qc_qaoa.m (simulated QAOA), kb_qc_greedy.m (copy of greedy)
 ├── tests/test_p01.m
 └── output/               run-*/raw.json, instances.json (git-ignored)
 ```
 
 `run_benchmark` adds `src/` and all its subfolders to the path itself (`genpath`).
+
+## QUBO variant B and MathWorks `knapsack2qubo`
+
+`qubo_b` is a copy of `qubo` today. In a later iteration its build step uses MathWorks `knapsack2qubo`; the steps are written in `kp_algo_qubo_b_main.m` (header) and marked `TODO(knapsack2qubo)` where code changes:
+
+1. needs MATLAB R2025b or later + the free *MATLAB Support Package for Quantum Computing*; GNU Octave has neither, so the server image skips `qubo_b`;
+2. loader: `L.available = @() exist('knapsack2qubo', 'file') == 2;` (Octave then lists it in `skipped_algorithms`), `L.environment` reports the package;
+3. build: `qprob = knapsack2qubo(v, w, C, Penalty=penalty)` → `QuadraticTerm`, `LinearTerm`, `ConstantTerm`; first check the energies equal `kb_qubo_b_knapsack2qubo` on the MathWorks example (10 variables, constant 289, energy −16);
+4. solve: keep the seeded tabu search, or `solve(qprob, Algorithm=tabuSearch(...))` (not seeded: MATLAB then differs from Python and from `qubo`);
+5. decode: keep `kb_qubo_b_decode` (repair, same details) or `quboResult2knapsack`;
+6. delete unused modules, update config, schema, [functional page](../../functional/algorithms/qubo_b.md) and the parity expectation.
 
 ## Language-specific choices
 
@@ -126,6 +139,9 @@ Prints `test_p01: all checks passed`. The ILP check is skipped (with a message) 
 | MathWorks example | B1, B2 |
 | slack-optimal and all-bits tabu on P01 | A5, A6 |
 | slack round trip 0…17 (both encoders) | B3 |
+| correlation defaults, families, ratios, invalid settings | D1, D2 |
+| `qubo_b` and `qc` = `qubo` on P01 and instances 1–12; `kb_qc_greedy` = `greedy` | D3, D4 |
+| `kb_qc_qaoa` on the MathWorks example (same values as Python), `max_qubits` refused | D5, D6 |
 
 There is no MATLAB-side parity test: checks C1–C5 are run by the Python suite against the values of an Octave run.
 

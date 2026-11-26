@@ -1,4 +1,6 @@
-# `qubo` — QUBO model + tabu search (heuristic)
+# `qubo` — QUBO variant A: QUBO model + tabu search (heuristic)
+
+Variant A of the QUBO approach (label `QUBO A + Tabu Search (<mode>)`, short label `QUBO A`). [Variant B](qubo_b.md) and [QC](qc.md) run the same method today.
 
 | | |
 |---|---|

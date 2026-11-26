@@ -68,7 +68,8 @@ Module `instances.instances` (generator) and `instances.config_instances` (setti
 |---|---|
 | `FAMILIES` | `("uncorrelated", "weakly_correlated", "strongly_correlated")` |
 | `Instance` | dataclass: `family: str`, `weights: ndarray`, `values: ndarray`, `capacity: int` |
-| `generate_instances(count, seed, min_items, max_items, R, capacity_ratio) -> list[Instance]` | |
+| `generate_instances(count, seed, min_items, max_items, R, capacity_ratio, correlation=None) -> list[Instance]` | `correlation` = `cfg["instances"]["correlation"]` (default: `config_instances()`) |
+| `check_correlation(correlation) -> list[str]` | the families; `ValueError` on invalid settings |
 | `config_instances() -> dict` | default block `cfg["instances"]` (`count`, `min_items`, `max_items`, `max_coefficient`, `capacity_ratio`); `run_benchmark` writes it with `seed` as `instance_config` |
 
 ## `dp` — [spec](../../functional/algorithms/dp.md)
@@ -100,6 +101,18 @@ Module `instances.instances` (generator) and `instances.config_instances` (setti
 | `TabuStats` | dataclass: `iterations`, `restarts`, `tenure`, `move_evaluations`, `array_bytes` (returned by `_main` as `working_memory_bytes`) |
 
 `opts` = the `tabu` parameter group plus `seed` (set by the runner to `seed + 1000·k`).
+
+## `qubo_b` — [spec](../../functional/algorithms/qubo_b.md)
+
+`kp_algo_qubo_b_main(v, w, C, acfg, seed, mark=None)`: same as `kp_algo_qubo_main`; `algorithms/qubo_b/modules/qubo.py` is a copy of the `qubo` module. The MathWorks switch is MATLAB only.
+
+## `qc` — [spec](../../functional/algorithms/qc.md)
+
+| Function | Notes |
+|---|---|
+| `kp_algo_qc_main(v, w, C, acfg, seed, mark=None) -> (items, info)` | QUBO B code (active); commented calls to `qubo_tabu_slack`, `qaoa`, `greedy` |
+| `modules.qaoa.qaoa(Q, c, d, opts) -> (x, energy, QaoaStats)` | [QAOA](../../functional/algorithms/qc.md#11-qaoa-simulated); `opts`: `layers`, `shots`, `grid`, `refine`, `max_qubits`, `seed`; raises `QaoaTooLarge` |
+| `modules.greedy.greedy(v, w, C) -> (items, info)` | copy of `kp_algo_greedy_main` |
 
 ## `measure` — [cost metrics](../../functional/metrics.md#execution-cost)
 

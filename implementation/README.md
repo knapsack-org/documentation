@@ -22,7 +22,7 @@ Both projects use the same layout: helpers in `helpers/`, each algorithm in `alg
 | [Output schemas](../functional/output-format.md) | `algorithms/<id>/kp_algo_<id>_output.schema.json` (byte-identical in both; checked by knapsack-server's output service) | same file |
 | [Parameters](../functional/parameters.md) | `config.benchmark_config`, `algorithms/<id>/kp_algo_<id>_config.py` | `benchmark_config.m`, `algorithms/<id>/kp_algo_<id>_config.m` |
 | [Portable generator](../functional/instances.md#portable-random-generator) | `rng.seed_state`, `rng.lcg`, `rng.randi`, `rng.mround` | `kb_seed`, `kb_lcg`, `kb_randi`, built-in `round` |
-| [Instance families](../functional/instances.md#generation-procedure) | `instances/instances.generate_instances`, `instances/config_instances.config_instances` | `src/instances/`: `kb_generate_instances`, `kb_config_instances` |
+| [Instance families](../functional/instances.md#generation-procedure), correlation settings | `instances/instances.generate_instances`, `instances.check_correlation`, `instances/config_instances.config_instances` | `src/instances/`: `kb_generate_instances` (checks the correlation block), `kb_config_instances` |
 | [`dp`](../functional/algorithms/dp.md) | `kp_algo_dp_main` | `kp_algo_dp_main` |
 | [`bnb`](../functional/algorithms/bnb.md) | `kp_algo_bnb_main` | `kp_algo_bnb_main` |
 | [`ilp`](../functional/algorithms/ilp.md) | `kp_algo_ilp_main` (SciPy `milp`, HiGHS) | `kp_algo_ilp_main` (`intlinprog` or `glpk`; `modules/kb_ilp_solver_name`) |
@@ -33,6 +33,8 @@ Both projects use the same layout: helpers in `helpers/`, each algorithm in `alg
 | [Tabu, slack-optimal](../functional/algorithms/qubo.md#2-solver--tabu-search-mode-slack-optimal-default) | `qubo.qubo_tabu_slack` | `modules/kb_qubo_tabu_slack` |
 | [Tabu, all-bits](../functional/algorithms/qubo.md#3-solver--tabu-search-mode-all-bits-comparison) | `qubo.qubo_tabu` | `modules/kb_qubo_tabu` |
 | [Decode / repair](../functional/algorithms/qubo.md#4-decoding-and-repair) | `qubo.decode` | `modules/kb_decode` |
+| [`qubo_b`](../functional/algorithms/qubo_b.md) | `algorithms/qubo_b/`: copy of `qubo` (`modules/qubo.py`) | `algorithms/qubo_b/`: copy of `qubo`, modules renamed `kb_qubo_b_*`; [MathWorks transition](matlab/README.md#qubo-variant-b-and-mathworks-knapsack2qubo) |
+| [`qc`](../functional/algorithms/qc.md) — [QAOA](../functional/algorithms/qc.md#11-qaoa-simulated) | `algorithms/qc/`: QUBO B code; `modules/qubo.py`, `modules/qaoa.py` (`qaoa`, `QaoaTooLarge`), `modules/greedy.py` (`greedy`) | `algorithms/qc/`: QUBO B code; `modules/kb_qc_*` (QUBO), `kb_qc_qaoa`, `kb_qc_greedy` |
 | [`greedy`](../functional/algorithms/greedy.md) | `algorithms/greedy/kp_algo_greedy_main.py` | `kp_algo_greedy_main` |
 | [`sa`](../functional/algorithms/sa.md) | `algorithms/sa/kp_algo_sa_main.py` | `kp_algo_sa_main` |
 | [`ga`](../functional/algorithms/ga.md) | `algorithms/ga/kp_algo_ga_main.py` | `kp_algo_ga_main` |
@@ -44,7 +46,7 @@ Both projects use the same layout: helpers in `helpers/`, each algorithm in `alg
 | [Raw results](../functional/output-format.md#raw-results-knapsack-raw-v1) | `benchmark.run_benchmark`, `write_json.write_json` | `run_benchmark`, `kb_write_json` |
 | [Run request](../functional/output-format.md#run-request), [instance set](../functional/output-format.md#instance-set-file) | `cli.main`, `config.benchmark_config` | `run_benchmark`, `benchmark_config`, `kb_merge_settings` |
 | [Run file](../functional/output-format.md) (`schema_version` 4) | knapsack-server `knapsack-output` | knapsack-server `knapsack-output` |
-| [Acceptance tests](../functional/acceptance-tests.md) | `tests/test_p01.py`, `tests/test_parity.py` | `tests/test_p01.m` |
+| [Acceptance tests](../functional/acceptance-tests.md) | `tests/test_p01.py`, `tests/test_parity.py`, `tests/test_heuristics.py`, `tests/test_qc.py` | `tests/test_p01.m` |
 
 ## Differences between the implementations
 

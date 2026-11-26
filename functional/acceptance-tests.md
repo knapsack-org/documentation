@@ -31,9 +31,20 @@ $v = (5, 2, 8, 4, 3)$, $w = (9, 8, 4, 5, 2)$, $C = 17$, $P = 1$.
 |---|---|
 | C1 | Same instances in every implementation (weights, values, capacities) |
 | C2 | `bnb` proves the `dp` optimum on all 100 instances; total nodes 489 151; max 284 157, reached on instance 96 |
-| C3 | `dp`, `bnb`, `qubo`: identical values, items, node counts, tabu iteration counts and energies across implementations |
+| C3 | `dp`, `bnb`, `qubo`, `qubo_b`, `qc`: identical values, items, node counts, tabu iteration counts and energies across implementations |
 | C4 | `ilp`: identical **values**; item sets may differ when several optima exist (seen on 30 of 100 instances between HiGHS and GLPK) |
 | C5 | Run file built by knapsack-server's output service: `schema_version` = 4; algorithms in alphabetical order; reference `dp`; every `algorithms[]` entry and every `details` block valid against its algorithm's JSON Schema |
+
+## D. Correlation settings, QUBO variant B, QC
+
+| # | Check |
+|---|---|
+| D1 | The default `correlation` block gives the same instances as the generator before it (100 instances, and other sizes and seeds); $\lfloor 0.1 R \rfloor = \lfloor R/10 \rfloor$ for $R = 1 \dots 10^5$ |
+| D2 | `families` rotate in the given order (one family, two in a chosen order); $\delta = 0.2$ gives $v = w + \lfloor 0.2 R \rfloor$; $\alpha = 0$ gives $v = w$; an empty, repeated or unknown family, or a ratio outside $[0, 1]$, is refused; identical instances across implementations on a non-default setting |
+| D3 | `qubo_b` and `qc` return the same items, energy and move evaluations as `qubo` on P01 and instances 1–12, and on the 100 default instances |
+| D4 | the `qc` greedy module returns the same packing and info as `greedy` |
+| D5 | `qc` QAOA module on the MathWorks example: values in [qc §6](algorithms/qc.md#6-acceptance-checks), identical across implementations |
+| D6 | `qc` QAOA module refuses more qubits than `max_qubits` |
 
 ## Expected benchmark results
 
@@ -44,7 +55,7 @@ Default parameters, seed 2026, 100 instances:
 | `dp` | 100 | 100 | 0 % | 0 % | reference |
 | `bnb` | 100 | 100 | 0 % | 0 % | median 114 nodes, mean ≈ 4 900 |
 | `ilp` | 100 | 100 | 0 % | 0 % | |
-| `qubo` | 44 | 0 | 1.02 % | 4.80 % | all feasible before repair |
+| `qubo`, `qubo_b`, `qc` | 44 | 0 | 1.02 % | 4.80 % | all feasible before repair; same packings |
 
 Time and memory are machine-dependent; measured orders of magnitude are listed on the implementation pages.
 

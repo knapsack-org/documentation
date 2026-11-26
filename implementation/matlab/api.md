@@ -47,7 +47,7 @@ Contract and skeletons: [adding an algorithm](../adding-an-algorithm.md). For ev
 
 In `src/instances/`:
 
-- `instances = kb_generate_instances(count, seed, min_items, max_items, R, capacity_ratio)` — struct array with fields `family`, `weights`, `values`, `capacity`.
+- `instances = kb_generate_instances(count, seed, min_items, max_items, R, capacity_ratio, correlation)` — struct array with fields `id`, `family`, `weights`, `values`, `capacity`. `correlation` = block `cfg.instances.correlation` (`families` cell, `weak_noise_ratio`, `strong_offset_ratio`; default `kb_config_instances().correlation`); invalid settings → error `kb_generate_instances:correlation`.
 - `c = kb_config_instances()` — default block `cfg.instances` (`count`, `min_items`, `max_items`, `max_coefficient`, `capacity_ratio`). `run_benchmark` writes it with `seed` as `instance_config`.
 
 ## Exact algorithms
@@ -73,6 +73,19 @@ In `src/instances/`:
 `opts` = the `tabu` parameter group plus `seed` (set by the runner to `seed + 1000*k`). `stats`: `iterations`, `restarts`, `tenure`, `move_evaluations`, `working_memory_bytes`.
 
 The QUBO functions are in `src/algorithms/qubo/modules/`. Penalty rule (`kb_penalty(values, rule)`, same folder): a char `rule` → `max(values) + 1`, else `rule`.
+
+## QUBO variant B — [spec](../../functional/algorithms/qubo_b.md)
+
+`kp_algo_qubo_b_main(v, w, C, acfg, seed, mark)`: same as `kp_algo_qubo_main`; modules `kb_qubo_b_{penalty,knapsack2qubo,encode_slack,tabu_slack,tabu,decode}` in `src/algorithms/qubo_b/modules/`.
+
+## QC — [spec](../../functional/algorithms/qc.md)
+
+| Function | Notes |
+|---|---|
+| `[items, info] = kp_algo_qc_main(v, w, C, acfg, seed, mark)` | QUBO B code (active); commented calls to `kb_qc_tabu_slack`, `kb_qc_qaoa`, `kb_qc_greedy` below the solve step |
+| `[x, energy, stats] = kb_qc_qaoa(Q, c, d, opts)` | [QAOA](../../functional/algorithms/qc.md#11-qaoa-simulated); `opts`: `layers`, `shots`, `grid`, `refine`, `max_qubits`, `seed`; `stats`: `iterations`, `move_evaluations`, `working_memory_bytes`, `gamma`, `beta`, `expected_energy`; error `kb_qc_qaoa:tooLarge` |
+| `[items, info] = kb_qc_greedy(v, w, C)` | copy of `kp_algo_greedy_main` |
+| `kb_qc_{penalty,knapsack2qubo,encode_slack,tabu_slack,tabu,decode}` | copies of the `qubo` modules |
 
 ## Infrastructure
 

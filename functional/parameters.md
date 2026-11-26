@@ -8,12 +8,15 @@ Without a [run request](output-format.md#run-request) the benchmark runs every a
 
 | Key | Default | Meaning | Used in |
 |---|---|---|---|
-| `seed` | `2026` | master seed: instances, and the tabu streams of `qubo` | [instances](instances.md), [qubo](algorithms/qubo.md#2-solver--tabu-search-mode-slack-optimal-default) |
+| `seed` | `2026` | master seed: instances, and the per-instance streams of the randomised algorithms | [instances](instances.md), [qubo](algorithms/qubo.md#2-solver--tabu-search-mode-slack-optimal-default) |
 | `instances.count` | `100` | number of generated instances $N$ | [instances](instances.md) |
 | `instances.min_items` | `10` | size of the first instance | [instances](instances.md) |
 | `instances.max_items` | `48` | size of the last instance | [instances](instances.md) |
-| `instances.max_coefficient` | `100` | $R$: weights in $1 \dots R$; correlation offset $\lfloor R/10 \rfloor$ | [instances](instances.md) |
+| `instances.max_coefficient` | `100` | $R$: weights in $1 \dots R$ | [instances](instances.md) |
 | `instances.capacity_ratio` | `0.5` | $\rho$: $C = \lfloor \rho \sum w_i \rfloor$ | [instances](instances.md) |
+| `instances.correlation.families` | `["uncorrelated", "weakly_correlated", "strongly_correlated"]` | families rotated in this order (1 to 3 distinct names) | [instances](instances.md#generation-procedure) |
+| `instances.correlation.weak_noise_ratio` | `0.1` | $\alpha$ in $[0, 1]$: weakly correlated noise $\pm\lfloor \alpha R \rfloor$ | [instances](instances.md#generation-procedure) |
+| `instances.correlation.strong_offset_ratio` | `0.1` | $\delta$ in $[0, 1]$: strongly correlated offset $\lfloor \delta R \rfloor$ | [instances](instances.md#generation-procedure) |
 
 The `instances` block is the instance generator's settings. A run writes it, with `seed`, as `instance_config` in the [output](output-format.md#instance_config).
 
@@ -61,7 +64,23 @@ Each algorithm has its own settings block, keyed by its id, defined in the algor
 | `qubo.tabu.tenure_min` | `10` | tabu tenure $T = \text{tenure\_min} + \operatorname{round}(N/10)$ |
 | `qubo.repeats` | `1` | deterministic and slow |
 
-$N$ = number of searched bits: $n$ in `slack-optimal` mode, $n + K$ in `all-bits` mode.
+$N$ = number of searched bits: $n$ in `slack-optimal` mode, $n + K$ in `all-bits` mode. `qubo` is QUBO **variant A**.
+
+### `qubo_b`
+
+QUBO variant B ([qubo_b](algorithms/qubo_b.md)): the keys and defaults of [`qubo`](#qubo) under `qubo_b.*` (`qubo_b.penalty`, `qubo_b.tabu.*`, `qubo_b.repeats`).
+
+### `qc`
+
+| Key | Default | Meaning |
+|---|---|---|
+| `qc.penalty`, `qc.tabu.*` | as [`qubo`](#qubo) | the active QUBO tabu path ([qc](algorithms/qc.md)) |
+| `qc.qaoa.layers` | `2` | QAOA depth $p$ (used once the QAOA call is active) |
+| `qc.qaoa.shots` | `200` | samples of the final state |
+| `qc.qaoa.grid` | `12` | grid points per angle |
+| `qc.qaoa.refine` | `4` | coordinate-search rounds |
+| `qc.qaoa.max_qubits` | `20` | largest $N = n + K$ accepted |
+| `qc.repeats` | `1` | deterministic and slow |
 
 ### `greedy`
 

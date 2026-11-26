@@ -68,8 +68,10 @@ knapsack-benchmark-python/
 │   └── algorithms/     one self-contained package per algorithm
 │       ├── <id>/kp_algo_<id>_loader.py, _main.py, _config.py, _output.py, _output.schema.json (+ optional modules/)
 │       ├── bnb/ · dp/ · ilp/     the four files only
-│       └── qubo/modules/qubo.py  QUBO model, slack encoding, both tabu searches, decode, penalty
-├── tests/test_p01.py, tests/test_parity.py
+│       ├── qubo/modules/qubo.py  QUBO model, slack encoding, both tabu searches, decode, penalty
+│       ├── qubo_b/modules/qubo.py  copy (QUBO variant B)
+│       └── qc/modules/       qubo.py (copy), qaoa.py (simulated QAOA), greedy.py (copy of greedy)
+├── tests/test_p01.py, test_parity.py, test_heuristics.py, test_qc.py
 └── output/             run-*/raw.json, instances.json (git-ignored)
 ```
 
@@ -122,8 +124,9 @@ pytest -m "not slow"     # without the full run
 | `test_p01.py::test_qubo_tabu_p01` | A5, A6 |
 | `test_p01.py::test_slack_encoding` (qubo) | B3 |
 | `test_p01.py::test_instances_match_matlab` | C1 (first instance: n = 10, C = 285, optimum 345) |
+| `test_qc.py` (correlation settings, `qubo_b` / `qc` = `qubo`, QC greedy and QAOA modules) | D1–D6 |
 | `test_parity.py::test_bnb_nodes_and_optimum` | C2 |
-| `test_parity.py::test_full_run_matches_octave` (`slow`; writes `output/run-*.json` and deletes it) | C3 (QUBO values of all 100 instances), C4, C5 (version, order, reference), expected results |
+| `test_parity.py::test_full_run_matches_octave` (`slow`; writes `output/run-*.json` and deletes it) | C3 (QUBO values of all 100 instances, for `qubo`, `qubo_b` and `qc`), D3, C4, C5 (version, order, reference), expected results |
 
 The expected values in `test_parity.py` come from the Octave runs; they are unchanged in the v2 runs `run-16-11-26-16-38.json` / `run-16-11-26-16-39.json` and the v3 reference runs `run-18-11-26-19-30.json` (Octave) / `run-18-11-26-19-32.json` (Python). Run files are not in git (`output/*.json` is ignored).
 

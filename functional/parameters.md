@@ -20,6 +20,20 @@ Without a [run request](output-format.md#run-request) the benchmark runs every a
 
 The `instances` block is the instance generator's settings. A run writes it, with `seed`, as `instance_config` in the [output](output-format.md#instance_config).
 
+### Use cases
+
+A server run may name a use case (`use_case` in the [run request](output-format.md#run-request)). It does not change the generator: it presets the `instances` block and restricts it, and the server rejects a request whose settings break its rules (it never adjusts them). Knapview fills in the preset when a use case is picked. A run without one (old runs, uploaded files, command-line runs) is shown as Custom. Source: `knapsack-server/libs/contracts/src/use-cases.ts` (values to be confirmed).
+
+| `use_case` | `count` | `min_items`, `max_items` | `max_coefficient` | `capacity_ratio` | `correlation` |
+|---|---|---|---|---|---|
+| `cargo_loading` | 20 to 50 | 50 to 120 | fixed 1000 | fixed 0.5 | families fixed `strongly_correlated`; `strong_offset_ratio` 0.05 to 0.2 |
+| `capital_budgeting` | 10 to 30 | 10 to 30 | 100 to 500 | 0.2 to 0.4 | families fixed `weakly_correlated`; `weak_noise_ratio` 0.1 to 0.3 |
+| `cloud_packing` | 50 to 100 | 100 to 200 | fixed 100 | 0.6 to 0.8 | families fixed `uncorrelated` |
+| `portfolio` | 30 to 60 | 20 to 60 | fixed 1000 | fixed 0.25 | families fixed `weakly_correlated`, `strongly_correlated` |
+| `ad_slots` | 20 to 80 | 80 to 200 | 50 to 200 | 0.1 to 0.3 | families fixed `uncorrelated`, `weakly_correlated` |
+
+Fixed families must be sent in the order shown (the rotation order changes the instances). Ranges include both ends.
+
 ## Algorithms
 
 | Key | Value | Meaning |

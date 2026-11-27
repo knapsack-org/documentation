@@ -165,7 +165,7 @@ The input of a server run (`POST /api/v1/runs`) and of the benchmarks' `--reques
 
 | Field | Type | Meaning |
 |---|---|---|
-| `use_case` | string | optional [use case](parameters.md#use-cases) (`cargo_loading`, `capital_budgeting`, `cloud_packing`, `portfolio`, `ad_slots`); the server rejects instance settings outside its rules; absent = none. Server runs keep it in `server.request`; the benchmarks ignore it |
+| `use_case` | string | optional [use case](parameters.md#use-cases) (`cargo_loading`, `cutting_stock`); the server rejects instance settings outside its rules; absent = none. Server runs keep it in `server.request`; the benchmarks ignore it |
 | `environments` | string[] | `matlab`, `python` (default both; the benchmarks ignore it) |
 | `seed` | int | master seed (default 2026) |
 | `instances` | object | part of the [`instances` block](parameters.md#instances): `count` (≤ 100 on the server), `min_items`, `max_items`, `max_coefficient`, `capacity_ratio` |

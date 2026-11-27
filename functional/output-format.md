@@ -167,6 +167,7 @@ The input of a server run (`POST /api/v1/runs`) and of the benchmarks' `--reques
 |---|---|---|
 | `use_case` | string | optional [use case](parameters.md#use-cases) (`cargo_loading`, `cutting_stock`); the server rejects instance settings outside its rules; absent = none. Server runs keep it in `server.request`; the benchmarks ignore it |
 | `environments` | string[] | `matlab`, `python` (default both; the benchmarks ignore it) |
+| `computers` | object | optional worker computer per environment, `{<env>: <id>}` with `c7g.xlarge-spot` (default), `c7g.xlarge-on-demand`, `c7g.2xlarge-spot`, `c7g.4xlarge-spot`; Spot falls back to on-demand without capacity. Server runs only (worker jobs and the benchmarks never see it); kept in `server.request`. Source: `knapsack-server/libs/contracts/src/computers.ts` |
 | `seed` | int | master seed (default 2026) |
 | `instances` | object | part of the [`instances` block](parameters.md#instances): `count` (≤ 100 on the server), `min_items`, `max_items`, `max_coefficient`, `capacity_ratio` |
 | `algorithms` | string[] | ids to run; the reference `dp` is always added (default: all) |

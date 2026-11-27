@@ -22,15 +22,19 @@ The `instances` block is the instance generator's settings. A run writes it, wit
 
 ### Use cases
 
-A server run may name a use case (`use_case` in the [run request](output-format.md#run-request)). It does not change the generator: it presets the `instances` block and restricts it, and the server rejects a request whose settings break its rules (it never adjusts them). Knapview fills in the preset when a use case is picked. A run without one (old runs, uploaded files, command-line runs) is shown as Custom. Source: `knapsack-server/libs/contracts/src/use-cases.ts` (values to be confirmed).
+A server run may name a use case (`use_case` in the [run request](output-format.md#run-request)). It does not change the generator: it presets the `instances` block and restricts it, and the server rejects a request whose settings break its rules (it never adjusts them). Knapview fills in the preset when a use case is picked. A run without one (old runs, uploaded files, command-line runs) is shown as Custom. Source: `knapsack-server/libs/contracts/src/use-cases.ts`.
 
-| `use_case` | `count` | `min_items`, `max_items` | `max_coefficient` | `capacity_ratio` | `correlation` |
-|---|---|---|---|---|---|
-| `cargo_loading` | 20 to 50 | 50 to 120 | fixed 1000 | fixed 0.5 | families fixed `strongly_correlated`; `strong_offset_ratio` 0.05 to 0.2 |
-| `capital_budgeting` | 10 to 30 | 10 to 30 | 100 to 500 | 0.2 to 0.4 | families fixed `weakly_correlated`; `weak_noise_ratio` 0.1 to 0.3 |
-| `cloud_packing` | 50 to 100 | 100 to 200 | fixed 100 | 0.6 to 0.8 | families fixed `uncorrelated` |
-| `portfolio` | 30 to 60 | 20 to 60 | fixed 1000 | fixed 0.25 | families fixed `weakly_correlated`, `strongly_correlated` |
-| `ad_slots` | 20 to 80 | 80 to 200 | 50 to 200 | 0.1 to 0.3 | families fixed `uncorrelated`, `weakly_correlated` |
+| `use_case` | `count` | `min_items`, `max_items` | `max_coefficient` | `capacity_ratio` | `correlation` | preset |
+|---|---|---|---|---|---|---|
+| `cargo_loading` | 10 to 50 | 40 to 200 | fixed 500 | fixed 0.5 | families fixed `weakly_correlated`; `weak_noise_ratio` 0.1 to 0.3 | 20 instances, 40 to 200 items, noise 0.2 |
+| `cutting_stock` | 20 to 100 | 6 to 30 | fixed 200 | fixed 0.4 | families fixed `strongly_correlated`; `strong_offset_ratio` 0.05 to 0.25 | 50 instances, 6 to 30 items, offset 0.1 |
+
+The generator draws weights and values as integers from 1 to `max_coefficient` and sets $C = \lfloor \rho \sum w \rfloor$ ([instances](instances.md)), so each use case says what one unit stands for:
+
+- **Cargo loading** (Marc's truck). 1 weight unit = 1 kg, so parcels weigh 1 to 500 kg; 1 value unit = 4 €. The truck takes half the total weight on offer, about $0.5 \times 250.5\,n$ kg, so 5 t for 40 parcels to 25 t for 200. Weakly correlated: heavier parcels usually pay more, give or take 10 % to 30 % of 500 units (200 € to 600 €). Story values not reachable: more than 200 parcels (run limit) and a value range separate from the weight range (one scale for both).
+- **Cutting stock** (Léa's bar). 1 weight unit = 1 cm, so orders are 1 cm to 2 m long; 1 value unit = 2 €. The bar is 40 % of the total ordered length, about $0.4 \times 100.5\,n$ cm, so 2.4 m for 6 orders to 12 m for 30. Strongly correlated: price = length + a fixed cutting fee of 5 % to 25 % of 200 units (10 to 50 units; 20 units = 40 € at the preset), so earning most means wasting least wood. Story values not reachable: a 20 cm shortest order (the generator starts at 1) and 5 orders (6 keeps the shortest bar near 2.5 m).
+
+Capacities are expected values: an instance's $C$ follows its drawn weights.
 
 Fixed families must be sent in the order shown (the rotation order changes the instances). Ranges include both ends.
 

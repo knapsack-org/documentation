@@ -26,13 +26,25 @@ A server run may name a use case (`use_case` in the [run request](output-format.
 
 | `use_case` | `count` | `min_items`, `max_items` | `max_coefficient` | `capacity_ratio` | `correlation` | preset |
 |---|---|---|---|---|---|---|
-| `cargo_loading` | 10 to 50 | 40 to 200 | fixed 500 | fixed 0.5 | families fixed `weakly_correlated`; `weak_noise_ratio` 0.1 to 0.3 | 20 instances, 40 to 200 items, noise 0.2 |
+| `cargo_loading` | 10 to 50 | 2 to 194 | fixed 305 | fixed by the [ship](#cargo-ships): 0.7, 0.75 or 0.5 | families fixed `uncorrelated` | 20 instances, 2 to 40 items, ratio 0.75 (Panamax) |
 | `cutting_stock` | 20 to 100 | 6 to 30 | fixed 200 | fixed 0.4 | families fixed `strongly_correlated`; `strong_offset_ratio` 0.05 to 0.25 | 50 instances, 6 to 30 items, offset 0.1 |
 
 The generator draws weights and values as integers from 1 to `max_coefficient` and sets $C = \lfloor \rho \sum w \rfloor$ ([instances](instances.md)), so each use case says what one unit stands for:
 
-- **Cargo loading** (Marc's truck). 1 weight unit = 1 kg, so parcels weigh 1 to 500 kg; 1 value unit = 4 €. The truck takes half the total weight on offer, about $0.5 \times 250.5\,n$ kg, so 5 t for 40 parcels to 25 t for 200. Weakly correlated: heavier parcels usually pay more, give or take 10 % to 30 % of 500 units (200 € to 600 €). Story values not reachable: more than 200 parcels (run limit) and a value range separate from the weight range (one scale for both).
+- **Cargo loading** (Marc's container ship). 1 item = 125 containers (real ships hold up to 24,346, a run at most 200 items); 1 weight unit = 100 kg per container, so 12.5 t per item, and 305 units = 30.5 t, the limit of one box. Uncorrelated: freight is paid per container, so value does not follow weight; the value unit has no price. Expected capacity $\rho \times 153\,n \times 12.5$ t: about 57,000 t for 40 items on the Panamax.
 - **Cutting stock** (Léa's bar). 1 weight unit = 1 cm, so orders are 1 cm to 2 m long; 1 value unit = 2 €. The bar is 40 % of the total ordered length, about $0.4 \times 100.5\,n$ cm, so 2.4 m for 6 orders to 12 m for 30. Strongly correlated: price = length + a fixed cutting fee of 5 % to 25 % of 200 units (10 to 50 units; 20 units = 40 € at the preset), so earning most means wasting least wood. Story values not reachable: a 20 cm shortest order (the generator starts at 1) and 5 orders (6 keeps the shortest bar near 2.5 m).
+
+#### Cargo ships
+
+`max_items` picks the ship, which fixes `capacity_ratio`; `min_items` does not matter. The ratios are estimates (cargo weight a ship can carry / weight of the containers offered).
+
+| Ship | Real containers | `max_items` | `capacity_ratio` |
+|---|---|---|---|
+| feeder (smallest) | 150 to 1,000 | up to 8 | 0.7 |
+| Panamax (medium, preset) | 1,501 to 5,100 | 9 to 40 | 0.75 |
+| ultra-large (biggest) | 7,251 to 24,346 | 41 to 194 | 0.5 |
+
+Runs requested under the earlier cargo loading rules still read: stored requests are not checked against the rules again.
 
 Capacities are expected values: an instance's $C$ follows its drawn weights.
 
